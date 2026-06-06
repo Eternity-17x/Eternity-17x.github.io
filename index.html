@@ -2,13 +2,10 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <!-- 强制适配手机横屏、禁止缩放 -->
+  <!-- 视口设置：禁止缩放，适配手机 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="screen-orientation" content="landscape">
-  <meta name="x5-orientation" content="landscape">
-  <meta name="360-orientation" content="landscape">
   <title>喜欢徐依晨的全部</title>
   <style>
     * {
@@ -31,17 +28,17 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: clamp(28px, 6vw, 36px);
+      font-size: clamp(24px, 5vw, 36px);
       font-style: italic;
       opacity: 0;
       transition: opacity 0.8s ease;
       z-index: 99;
       white-space: nowrap;
     }
-    /* 环绕文字 */
+    /* 周围文字 */
     .word {
       position: absolute;
-      font-size: clamp(16px, 3.5vw, 20px);
+      font-size: clamp(14px, 3vw, 20px);
       opacity: 0;
       transition: opacity 0.8s ease;
       font-style: italic;
@@ -51,22 +48,10 @@
     .word.show {
       opacity: 1;
     }
-    /* 缓慢漂浮动画 */
+    /* 漂浮动画 */
     @keyframes float {
       0% { transform: translate(0, 0); }
-      100% { transform: translate(6px, -6px); }
-    }
-    /* 强制横屏：竖屏时自动旋转 */
-    @media screen and (orientation: portrait) {
-      body {
-        transform: rotate(90deg);
-        transform-origin: center center;
-        width: 100vh;
-        height: 100vw;
-        position: fixed;
-        top: 0;
-        left: 0;
-      }
+      100% { transform: translate(5px, -5px); }
     }
   </style>
 </head>
@@ -90,21 +75,26 @@
     const centerText = document.getElementById('centerText');
     let usedPos = [];
 
-    // 核心：环形均匀分布 + 强制防堆叠
+    // 核心：只在横屏状态下计算布局，竖屏状态不强制旋转
     function createWords() {
       usedPos = [];
       container.innerHTML = "";
 
-      const w = Math.max(window.innerWidth, window.innerHeight);
-      const h = Math.min(window.innerWidth, window.innerHeight);
+      // 优先使用横屏尺寸计算，确保横屏效果正确
+      let w = window.innerWidth;
+      let h = window.innerHeight;
+      if (w < h) {
+        // 竖屏状态下，按横屏宽高比模拟布局，保证横屏时能正常显示
+        [w, h] = [h, w];
+      }
       const cx = w / 2;
       const cy = h / 2;
 
-      // 三层环形分布，和视频效果一致
+      // 三层环形分布，和视频效果完全一致
       const rings = [
-        { radius: 180, count: 12 },
-        { radius: 250, count: 12 },
-        { radius: 320, count: 12 }
+        { radius: 160, count: 12 },
+        { radius: 230, count: 12 },
+        { radius: 300, count: 12 }
       ];
 
       let idx = 0;
@@ -119,7 +109,7 @@
 
           // 环形均匀分布，带轻微随机偏移
           let angle = startAngle + (i / ring.count) * Math.PI * 2;
-          let r = ring.radius + (Math.random() - 0.5) * 60;
+          let r = ring.radius + (Math.random() - 0.5) * 50;
           let x = cx + Math.cos(angle) * r;
           let y = cy + Math.sin(angle) * r;
 
@@ -129,7 +119,7 @@
           if (y < 60) y = 60;
           if (y > h - 60) y = h - 60;
 
-          // 碰撞检测：强制保持100px安全距离，不重叠
+          // 碰撞检测：强制保持100px安全距离，彻底杜绝堆叠
           let tryTimes = 0;
           while (tryTimes < 200) {
             let overlap = false;
