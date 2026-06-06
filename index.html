@@ -2,34 +2,41 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>喜欢徐依晨的全部</title>
   <style>
-    body {
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
+    }
+    body {
       background: #000;
       color: #fff;
       font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", sans-serif;
       overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
     }
-    /* 中心文字样式 */
+    /* 中心文字样式（适配横屏） */
     .center-text {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 32px;
+      font-size: clamp(20px, 4vw, 32px);
       font-weight: normal;
       font-style: italic;
       opacity: 0;
       transition: opacity 0.8s ease;
-      z-index: 10; /* 保证中心文字在最上层 */
+      z-index: 10;
+      white-space: nowrap;
     }
-    /* 周围文字样式 */
+    /* 周围文字样式（适配横屏） */
     .word {
       position: absolute;
-      font-size: 20px;
+      font-size: clamp(12px, 3vw, 18px);
       opacity: 0;
       transition: opacity 0.8s ease;
       font-style: italic;
@@ -55,7 +62,6 @@
   <div id="wordsContainer"></div>
 
   <script>
-    // 所有文字内容
     const words = [
       "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛", 
       "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽", 
@@ -69,13 +75,13 @@
 
     const container = document.getElementById('wordsContainer');
     const centerText = document.getElementById('centerText');
-    const positions = []; // 记录已放置的文字位置，避免重叠
+    const positions = [];
 
     function initWords() {
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
-      const minDistFromCenter = 200;   // 距离中心文字的最小距离
-      const minDistBetweenWords = 110;  // 文字之间的最小距离，防止重叠
+      const minDistFromCenter = 160;   // 横屏适配的中心距离
+      const minDistBetweenWords = 90;  // 横屏适配的防重叠距离
 
       words.forEach((word, index) => {
         const div = document.createElement('div');
@@ -86,21 +92,20 @@
         let validPosition = false;
         let x, y, attempts = 0;
 
-        // 最多尝试150次，找到一个不重叠的位置
         while (!validPosition && attempts < 150) {
-          // 用极坐标生成围绕中心的随机位置，确保分布均匀
+          // 横屏优化：极坐标分布，适配宽屏比例
           const angle = Math.random() * 2 * Math.PI;
-          const radius = minDistFromCenter + Math.random() * Math.min(window.innerWidth, window.innerHeight) / 3;
+          const radius = minDistFromCenter + Math.random() * Math.min(window.innerWidth, window.innerHeight) / 2.5;
           x = centerX + Math.cos(angle) * radius;
           y = centerY + Math.sin(angle) * radius;
 
-          // 边界检查：文字不能跑到屏幕外
-          if (x < 60 || x > window.innerWidth - 60 || y < 60 || y > window.innerHeight - 60) {
+          // 横屏边界检查，避免文字跑出屏幕
+          if (x < 40 || x > window.innerWidth - 40 || y < 40 || y > window.innerHeight - 40) {
             attempts++;
             continue;
           }
 
-          // 碰撞检测：检查和已有的文字是否重叠
+          // 防重叠检测
           let tooClose = false;
           for (const pos of positions) {
             const dist = Math.hypot(x - pos.x, y - pos.y);
@@ -117,30 +122,36 @@
           attempts++;
         }
 
-        // 设置最终位置
         div.style.left = `${x}px`;
         div.style.top = `${y}px`;
 
-        // 随机漂浮参数，让每个文字的动画节奏不一样
+        // 随机动画节奏，让漂浮更自然
         const duration = 3 + Math.random() * 2;
         const delay = Math.random() * 2;
         div.style.animationDuration = `${duration}s`;
         div.style.animationDelay = `${delay}s`;
 
-        // 逐个显示文字
         setTimeout(() => {
           div.classList.add('show');
         }, index * 100);
       });
     }
 
-    // 页面加载完成后执行
+    // 监听窗口大小变化，自动重新布局（适配旋转/横屏）
+    function updateLayout() {
+      positions.length = 0;
+      container.innerHTML = '';
+      initWords();
+    }
+
+    // 页面加载完成后初始化
     window.onload = () => {
-      // 先显示中心文字
       centerText.style.opacity = '1';
-      // 延迟加载周围文字
       setTimeout(initWords, 500);
     };
+
+    // 监听窗口尺寸变化（手机横竖屏切换时自动重排）
+    window.addEventListener('resize', updateLayout);
   </script>
 </body>
 </html>
