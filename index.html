@@ -2,43 +2,34 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <!-- 视口设置：禁止缩放，适配手机 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>喜欢徐依晨的全部</title>
   <style>
-    * {
+    body {
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
-    }
-    html, body {
       background: #000;
       color: #fff;
-      font-family: "KaiTi", "STKaiti", sans-serif;
+      font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", sans-serif;
       overflow: hidden;
-      width: 100vw;
-      height: 100vh;
-      position: relative;
     }
-    /* 中心文字 */
+    /* 中心文字样式 */
     .center-text {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: clamp(24px, 5vw, 36px);
+      font-size: 32px;
+      font-weight: normal;
       font-style: italic;
       opacity: 0;
       transition: opacity 0.8s ease;
-      z-index: 99;
-      white-space: nowrap;
+      z-index: 10; /* 保证中心文字在最上层 */
     }
-    /* 周围文字 */
+    /* 周围文字样式 */
     .word {
       position: absolute;
-      font-size: clamp(14px, 3vw, 20px);
+      font-size: 20px;
       opacity: 0;
       transition: opacity 0.8s ease;
       font-style: italic;
@@ -48,10 +39,14 @@
     .word.show {
       opacity: 1;
     }
-    /* 漂浮动画 */
+    /* 缓慢漂浮动画 */
     @keyframes float {
-      0% { transform: translate(0, 0); }
-      100% { transform: translate(5px, -5px); }
+      0% {
+        transform: translate(0, 0);
+      }
+      100% {
+        transform: translate(6px, -6px);
+      }
     }
   </style>
 </head>
@@ -60,116 +55,92 @@
   <div id="wordsContainer"></div>
 
   <script>
+    // 所有文字内容
     const words = [
-      "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛",
-      "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽",
-      "徐依晨的声音", "徐依晨的开朗", "徐依晨的不堪", "徐依晨的优点", "徐依晨的腼腆",
-      "徐依晨的窘迫", "徐依晨的脆弱", "徐依晨的生气", "徐依晨的底线", "徐依晨的古板",
-      "徐依晨的家人", "徐依晨的人格", "徐依晨的家乡", "徐依晨的三观", "徐依晨的嗜好",
-      "徐依晨的灵动", "徐依晨的善良", "徐依晨的经历", "徐依晨的生日", "徐依晨的浪漫",
-      "徐依晨的不甘", "徐依晨的固执", "徐依晨的朋友", "徐依晨的尊严", "徐依晨的天真",
+      "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛", 
+      "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽", 
+      "徐依晨的声音", "徐依晨的开朗", "徐依晨的不堪", "徐依晨的优点", "徐依晨的腼腆", 
+      "徐依晨的窘迫", "徐依晨的脆弱", "徐依晨的生气", "徐依晨的底线", "徐依晨的古板", 
+      "徐依晨的家人", "徐依晨的人格", "徐依晨的家乡", "徐依晨的三观", "徐依晨的嗜好", 
+      "徐依晨的灵动", "徐依晨的善良", "徐依晨的经历", "徐依晨的生日", "徐依晨的浪漫", 
+      "徐依晨的不甘", "徐依晨的固执", "徐依晨的朋友", "徐依晨的尊严", "徐依晨的天真", 
       "徐依晨的美好", "徐依晨的血型"
     ];
 
     const container = document.getElementById('wordsContainer');
     const centerText = document.getElementById('centerText');
-    let usedPos = [];
+    const positions = []; // 记录已放置的文字位置，避免重叠
 
-    // 核心：只在横屏状态下计算布局，竖屏状态不强制旋转
-    function createWords() {
-      usedPos = [];
-      container.innerHTML = "";
+    function initWords() {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const minDistFromCenter = 200;   // 距离中心文字的最小距离
+      const minDistBetweenWords = 110;  // 文字之间的最小距离，防止重叠
 
-      // 优先使用横屏尺寸计算，确保横屏效果正确
-      let w = window.innerWidth;
-      let h = window.innerHeight;
-      if (w < h) {
-        // 竖屏状态下，按横屏宽高比模拟布局，保证横屏时能正常显示
-        [w, h] = [h, w];
-      }
-      const cx = w / 2;
-      const cy = h / 2;
+      words.forEach((word, index) => {
+        const div = document.createElement('div');
+        div.className = 'word';
+        div.textContent = word;
+        container.appendChild(div);
 
-      // 三层环形分布，和视频效果完全一致
-      const rings = [
-        { radius: 160, count: 12 },
-        { radius: 230, count: 12 },
-        { radius: 300, count: 12 }
-      ];
+        let validPosition = false;
+        let x, y, attempts = 0;
 
-      let idx = 0;
-      rings.forEach((ring, ringIndex) => {
-        const startAngle = (ringIndex * Math.PI * 2) / 3;
-        for (let i = 0; i < ring.count && idx < words.length; i++) {
-          const item = words[idx];
-          const el = document.createElement('div');
-          el.className = "word";
-          el.innerText = item;
-          container.appendChild(el);
+        // 最多尝试150次，找到一个不重叠的位置
+        while (!validPosition && attempts < 150) {
+          // 用极坐标生成围绕中心的随机位置，确保分布均匀
+          const angle = Math.random() * 2 * Math.PI;
+          const radius = minDistFromCenter + Math.random() * Math.min(window.innerWidth, window.innerHeight) / 3;
+          x = centerX + Math.cos(angle) * radius;
+          y = centerY + Math.sin(angle) * radius;
 
-          // 环形均匀分布，带轻微随机偏移
-          let angle = startAngle + (i / ring.count) * Math.PI * 2;
-          let r = ring.radius + (Math.random() - 0.5) * 50;
-          let x = cx + Math.cos(angle) * r;
-          let y = cy + Math.sin(angle) * r;
-
-          // 边界保护，不让文字跑出屏幕
-          if (x < 60) x = 60;
-          if (x > w - 60) x = w - 60;
-          if (y < 60) y = 60;
-          if (y > h - 60) y = h - 60;
-
-          // 碰撞检测：强制保持100px安全距离，彻底杜绝堆叠
-          let tryTimes = 0;
-          while (tryTimes < 200) {
-            let overlap = false;
-            for (let p of usedPos) {
-              const dist = Math.hypot(x - p.x, y - p.y);
-              if (dist < 100) {
-                overlap = true;
-                break;
-              }
-            }
-
-            if (!overlap) break;
-
-            // 微调角度换位置
-            angle += 0.15;
-            x = cx + Math.cos(angle) * r;
-            y = cy + Math.sin(angle) * r;
-
-            if (x < 60) x = 60;
-            if (x > w - 60) x = w - 60;
-            if (y < 60) y = 60;
-            if (y > h - 60) y = h - 60;
-
-            tryTimes++;
+          // 边界检查：文字不能跑到屏幕外
+          if (x < 60 || x > window.innerWidth - 60 || y < 60 || y > window.innerHeight - 60) {
+            attempts++;
+            continue;
           }
 
-          usedPos.push({ x, y });
-          el.style.left = x + "px";
-          el.style.top = y + "px";
+          // 碰撞检测：检查和已有的文字是否重叠
+          let tooClose = false;
+          for (const pos of positions) {
+            const dist = Math.hypot(x - pos.x, y - pos.y);
+            if (dist < minDistBetweenWords) {
+              tooClose = true;
+              break;
+            }
+          }
 
-          // 随机动画节奏，漂浮更自然
-          el.style.animationDuration = (3 + Math.random() * 2) + "s";
-          el.style.animationDelay = Math.random() + "s";
-
-          setTimeout(() => el.classList.add("show"), idx * 80);
-          idx++;
+          if (!tooClose) {
+            validPosition = true;
+            positions.push({ x, y });
+          }
+          attempts++;
         }
+
+        // 设置最终位置
+        div.style.left = `${x}px`;
+        div.style.top = `${y}px`;
+
+        // 随机漂浮参数，让每个文字的动画节奏不一样
+        const duration = 3 + Math.random() * 2;
+        const delay = Math.random() * 2;
+        div.style.animationDuration = `${duration}s`;
+        div.style.animationDelay = `${delay}s`;
+
+        // 逐个显示文字
+        setTimeout(() => {
+          div.classList.add('show');
+        }, index * 100);
       });
     }
 
-    // 页面加载初始化
-    window.addEventListener("load", () => {
-      centerText.style.opacity = "1";
-      setTimeout(createWords, 400);
-    });
-
-    // 屏幕旋转自动重排
-    window.addEventListener("resize", () => {
-      setTimeout(createWords, 200);
-    });
+    // 页面加载完成后执行
+    window.onload = () => {
+      // 先显示中心文字
+      centerText.style.opacity = '1';
+      // 延迟加载周围文字
+      setTimeout(initWords, 500);
+    };
   </script>
 </body>
 </html>
