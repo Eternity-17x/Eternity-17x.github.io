@@ -10,7 +10,6 @@
       padding: 0;
       background: #000;
       color: #fff;
-      /* 手写风格字体，优先使用系统自带的 */
       font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", sans-serif;
       overflow: hidden;
     }
@@ -25,7 +24,6 @@
       font-size: 32px;
       margin-bottom: 30px;
       font-weight: normal;
-      /* 中心文字也加上倾斜 */
       font-style: italic;
     }
     .word {
@@ -33,12 +31,22 @@
       font-size: 20px;
       opacity: 0;
       transition: opacity 0.8s ease;
-      /* 关键：所有文字倾斜 */
       font-style: italic;
       white-space: nowrap;
+      /* 给每个文字加上基础的漂浮动画 */
+      animation: float 4s ease-in-out infinite alternate;
     }
     .word.show {
       opacity: 1;
+    }
+    /* 缓慢漂浮的关键帧动画 */
+    @keyframes float {
+      0% {
+        transform: translate(0, 0);
+      }
+      100% {
+        transform: translate(8px, -8px);
+      }
     }
   </style>
 </head>
@@ -49,7 +57,6 @@
   </div>
 
   <script>
-    // 所有要展示的文字（和视频里的内容对应）
     const words = [
       "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛", 
       "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽", 
@@ -64,29 +71,43 @@
     const container = document.getElementById('wordsContainer');
     const centerText = document.getElementById('centerText');
 
-    // 初始化文字，设置随机位置和显示动画
     function initWords() {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const minDistFromCenter = 180; // 避开中心文字的距离
+      
       words.forEach((word, index) => {
         const div = document.createElement('div');
         div.className = 'word';
         div.textContent = word;
         container.appendChild(div);
 
-        // 随机位置（避开中心文字区域，避免重叠）
-        const padding = 150;
-        const x = Math.random() * (window.innerWidth - padding * 2) + padding;
-        const y = Math.random() * (window.innerHeight - padding * 2) + padding;
+        // 生成随机位置，并确保不在中心区域
+        let x, y, attempts = 0;
+        do {
+          x = Math.random() * (window.innerWidth - 100) + 50;
+          y = Math.random() * (window.innerHeight - 100) + 50;
+          attempts++;
+        } while (
+          Math.hypot(x - centerX, y - centerY) < minDistFromCenter && 
+          attempts < 100
+        );
+
         div.style.left = `${x}px`;
         div.style.top = `${y}px`;
 
-        // 逐个延迟显示，营造从无到有的效果
+        // 给每个文字随机设置不同的动画时长和延迟，让漂浮更自然不整齐
+        const duration = 3 + Math.random() * 2;
+        const delay = Math.random() * 2;
+        div.style.animationDuration = `${duration}s`;
+        div.style.animationDelay = `${delay}s`;
+
         setTimeout(() => {
           div.classList.add('show');
-        }, index * 150);
+        }, index * 120);
       });
     }
 
-    // 先显示中心文字，再加载周围文字
     setTimeout(() => {
       centerText.style.opacity = '1';
       initWords();
