@@ -76,24 +76,25 @@
       pointer-events: none;
     }
 
+    /* 增大了周围文字的字号 */
     @media (min-width: 2000px) {
-      .word { font-size: 42px; }
+      .word { font-size: 46px; }
       .center-text { font-size: 52px; }
     }
     @media (min-width: 1400px) and (max-width: 1999px) {
-      .word { font-size: 36px; }
+      .word { font-size: 40px; }
       .center-text { font-size: 48px; }
     }
     @media (min-width: 1024px) and (max-width: 1399px) {
-      .word { font-size: 30px; }
+      .word { font-size: 34px; }
       .center-text { font-size: 44px; }
     }
     @media (min-width: 768px) and (max-width: 1023px) {
-      .word { font-size: 26px; }
+      .word { font-size: 30px; }
       .center-text { font-size: 40px; }
     }
     @media (max-width: 767px) {
-      .word { font-size: 22px; }
+      .word { font-size: 26px; }
       .center-text { font-size: 34px; }
     }
   </style>
@@ -121,11 +122,11 @@
 
       function getCurrentFontSize() {
         const w = window.innerWidth;
-        if (w >= 2000) return 42;
-        if (w >= 1400) return 36;
-        if (w >= 1024) return 30;
-        if (w >= 768) return 26;
-        return 22;
+        if (w >= 2000) return 46;
+        if (w >= 1400) return 40;
+        if (w >= 1024) return 34;
+        if (w >= 768) return 30;
+        return 26;
       }
 
       function getSpacing() {
@@ -228,7 +229,7 @@
         return true;
       }
 
-      // 生成布局位置（中心聚集 + 四周散布）
+      // 生成布局位置（修改了半径，让文字往中心靠拢）
       function generateLayout(sizes, centerSize) {
         const spacing = getSpacing();
         const centerClearance = getCenterClearance();
@@ -255,13 +256,12 @@
           let placed_success = false;
           let px = 0, py = 0;
 
-          // 第1阶段：70%概率尝试靠近中心（离中心文字保护区边缘不远）
+          // 第1阶段：70%概率尝试靠近中心（缩小了最大半径，让文字更集中）
           for (let attempt = 0; attempt < 3000; attempt++) {
-            // 使用环形分布：在中心保护区外围分布
             const angle = Math.random() * Math.PI * 2;
-            // 半径：从保护区边缘到屏幕60%处（靠近中心）
             const minRadius = centerClearance + Math.max(centerSize.width, centerSize.height) / 2;
-            const maxRadius = Math.min(window.innerWidth, window.innerHeight) * 0.55;
+            // 修改了这里，把最大半径从0.55缩小到0.45，让文字整体往中心靠拢
+            const maxRadius = Math.min(window.innerWidth, window.innerHeight) * 0.45;
             const radius = minRadius + Math.pow(Math.random(), 1.5) * (maxRadius - minRadius);
             
             const tx = centerX + Math.cos(angle) * radius - width / 2;
@@ -367,7 +367,7 @@
           setTimeout(() => {
             el.classList.add('show');
           }, idx * 60 + 200);
-        });
+      });
       }
 
       function layoutAll() {
