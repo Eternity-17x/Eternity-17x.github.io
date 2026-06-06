@@ -21,7 +21,6 @@
       position: relative;
     }
 
-    /* 中心文字 - 字号不变 */
     .center-text {
       position: absolute;
       top: 50%;
@@ -42,22 +41,16 @@
     }
 
     @keyframes centerGlow {
-      0% {
-        text-shadow: 0 0 25px rgba(255, 235, 190, 0.5), 0 0 60px rgba(255, 200, 140, 0.3);
-      }
-      100% {
-        text-shadow: 0 0 45px rgba(255, 235, 190, 0.8), 0 0 100px rgba(255, 200, 140, 0.5);
-      }
+      0% { text-shadow: 0 0 25px rgba(255, 235, 190, 0.5), 0 0 60px rgba(255, 200, 140, 0.3); }
+      100% { text-shadow: 0 0 45px rgba(255, 235, 190, 0.8), 0 0 100px rgba(255, 200, 140, 0.5); }
     }
 
-    /* 周围文字 - 进一步放大 */
     .word {
       position: absolute;
-      font-size: 32px;
       font-style: italic;
       white-space: nowrap;
       opacity: 0;
-      transition: opacity 1s ease;
+      transition: opacity 0.8s ease;
       z-index: 5;
       pointer-events: none;
       text-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
@@ -71,46 +64,39 @@
       opacity: 1;
     }
 
-    /* 测量容器 */
-    .measure-container {
-      position: absolute;
-      visibility: hidden;
-      white-space: nowrap;
-      font-style: italic;
-      pointer-events: none;
-      z-index: -999;
-    }
-
     .center-aura {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 260px;
-      height: 260px;
-      background: radial-gradient(circle, rgba(255, 210, 150, 0.08) 0%, transparent 70%);
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(255, 210, 150, 0.06) 0%, transparent 70%);
       border-radius: 50%;
       z-index: 1;
       pointer-events: none;
     }
 
-    /* 响应式调整 */
-    @media (max-width: 768px) {
-      .center-text {
-        font-size: 38px;
-      }
-      .word {
-        font-size: 24px;
-      }
+    /* 响应式：针对不同屏幕 */
+    @media (min-width: 2000px) {
+      .word { font-size: 42px; }
+      .center-text { font-size: 52px; }
     }
-
-    @media (max-width: 480px) {
-      .center-text {
-        font-size: 32px;
-      }
-      .word {
-        font-size: 20px;
-      }
+    @media (min-width: 1400px) and (max-width: 1999px) {
+      .word { font-size: 36px; }
+      .center-text { font-size: 48px; }
+    }
+    @media (min-width: 1024px) and (max-width: 1399px) {
+      .word { font-size: 30px; }
+      .center-text { font-size: 44px; }
+    }
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .word { font-size: 26px; }
+      .center-text { font-size: 40px; }
+    }
+    @media (max-width: 767px) {
+      .word { font-size: 22px; }
+      .center-text { font-size: 34px; }
     }
   </style>
 </head>
@@ -118,7 +104,6 @@
   <div class="center-aura"></div>
   <div class="center-text" id="centerText">我会喜欢徐依晨的全部</div>
   <div id="wordsContainer"></div>
-  <div id="measureContainer" class="measure-container"></div>
 
   <script>
     (function() {
@@ -135,168 +120,218 @@
 
       const container = document.getElementById('wordsContainer');
       const centerTextEl = document.getElementById('centerText');
-      const measureContainer = document.getElementById('measureContainer');
 
-      let screenWidth = window.innerWidth;
-      let screenHeight = window.innerHeight;
-      let centerX = screenWidth / 2;
-      let centerY = screenHeight / 2;
-
-      // 存储每个已放置元素的信息
-      let placedElements = [];
-
-      // 实际测量文字尺寸
-      function measureText(text, fontSize, letterSpacing) {
-        const measureEl = document.createElement('span');
-        measureEl.textContent = text;
-        measureEl.style.fontSize = fontSize + 'px';
-        measureEl.style.fontFamily = getComputedStyle(document.body).fontFamily;
-        measureEl.style.fontStyle = 'italic';
-        measureEl.style.letterSpacing = letterSpacing + 'px';
-        measureEl.style.position = 'absolute';
-        measureEl.style.visibility = 'hidden';
-        measureEl.style.whiteSpace = 'nowrap';
-        document.body.appendChild(measureEl);
+      // 使用Canvas精确测量文字宽度（不受CSS缩放影响）
+      function measureTextCanvas(text, fontStr) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.font = fontStr;
+        const metrics = ctx.measureText(text);
         
-        const rect = measureEl.getBoundingClientRect();
-        const width = rect.width;
-        const height = rect.height;
+        // 获取更精确的边界框
+        const actualWidth = metrics.width;
+        const actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
         
-        document.body.removeChild(measureEl);
-        
-        return { width, height };
+        return {
+          width: actualWidth,
+          height: Math.max(actualHeight, parseInt(fontStr) * 1.2) // 确保最小高度
+        };
       }
 
-      // 获取当前字体大小
-      function getWordFontSize() {
-        if (screenWidth <= 480) return 20;
-        if (screenWidth <= 768) return 24;
-        return 32;
+      function getFontString(fontSize) {
+        return `italic ${fontSize}px "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", serif`;
+      }
+
+      function getCurrentFontSize() {
+        const w = window.innerWidth;
+        if (w >= 2000) return 42;
+        if (w >= 1400) return 36;
+        if (w >= 1024) return 30;
+        if (w >= 768) return 26;
+        return 22;
       }
 
       function getCenterFontSize() {
-        if (screenWidth <= 480) return 32;
-        if (screenWidth <= 768) return 38;
-        return 48;
+        const w = window.innerWidth;
+        if (w >= 2000) return 52;
+        if (w >= 1400) return 48;
+        if (w >= 1024) return 44;
+        if (w >= 768) return 40;
+        return 34;
       }
 
-      // 获取布局参数
       function getLayoutParams() {
-        if (screenWidth <= 480) {
+        const w = window.innerWidth;
+        if (w >= 2000) {
           return {
-            centerMinDist: 120,
-            wordMinDist: 35,
-            edgePadding: 15,
-            maxIterations: 2000,
-          };
-        } else if (screenWidth <= 768) {
-          return {
-            centerMinDist: 150,
+            centerMinDist: 250,
             wordMinDist: 45,
-            edgePadding: 20,
-            maxIterations: 1500,
+            edgePadding: 50,
+            maxIterations: 5000,
+          };
+        } else if (w >= 1400) {
+          return {
+            centerMinDist: 220,
+            wordMinDist: 40,
+            edgePadding: 40,
+            maxIterations: 4000,
+          };
+        } else if (w >= 1024) {
+          return {
+            centerMinDist: 190,
+            wordMinDist: 35,
+            edgePadding: 30,
+            maxIterations: 3000,
+          };
+        } else if (w >= 768) {
+          return {
+            centerMinDist: 160,
+            wordMinDist: 30,
+            edgePadding: 25,
+            maxIterations: 2500,
           };
         } else {
           return {
-            centerMinDist: 180,
-            wordMinDist: 55,
-            edgePadding: 30,
-            maxIterations: 1000,
+            centerMinDist: 130,
+            wordMinDist: 25,
+            edgePadding: 20,
+            maxIterations: 2000,
           };
         }
       }
 
-      // 核心算法：力导向布局 + 碰撞检测
-      function calculatePositions(wordSizes, centerSize, params) {
+      // 核心：物理模拟布局算法
+      function physicsLayout(wordSizes, centerSize, params) {
         const { centerMinDist, wordMinDist, edgePadding, maxIterations } = params;
-        
-        // 初始化所有文字位置（随机散布，偏左）
-        const points = [];
-        const velocities = [];
-        
-        words.forEach((word, index) => {
+        const screenW = window.innerWidth;
+        const screenH = window.innerHeight;
+        const centerX = screenW / 2;
+        const centerY = screenH / 2;
+
+        // 初始化所有文字位置（完全随机散布）
+        const particles = words.map((word, i) => {
           const size = wordSizes[word];
-          // 初始位置：偏左的随机分布
-          const x = edgePadding + size.width/2 + Math.pow(Math.random(), 0.7) * (screenWidth - edgePadding * 2 - size.width);
-          const y = edgePadding + size.height/2 + Math.random() * (screenHeight - edgePadding * 2 - size.height);
-          
-          points.push({ x, y, width: size.width, height: size.height, index });
-          velocities.push({ vx: 0, vy: 0 });
+          return {
+            x: edgePadding + size.width / 2 + Math.random() * (screenW - edgePadding * 2 - size.width),
+            y: edgePadding + size.height / 2 + Math.random() * (screenH - edgePadding * 2 - size.height),
+            width: size.width,
+            height: size.height,
+            word: word,
+            index: i,
+            vx: 0,
+            vy: 0
+          };
         });
 
-        // 力导向迭代：推开重叠的文字
-        for (let iteration = 0; iteration < maxIterations; iteration++) {
+        // 中心文字的边界框
+        const centerBox = {
+          x: centerX - centerSize.width / 2,
+          y: centerY - centerSize.height / 2,
+          width: centerSize.width,
+          height: centerSize.height,
+        };
+
+        // 辅助函数：检查两个盒子是否重叠
+        function boxesOverlap(box1, box2, minDist) {
+          const ax1 = box1.x - box1.width / 2 - minDist;
+          const ax2 = box1.x + box1.width / 2 + minDist;
+          const ay1 = box1.y - box1.height / 2 - minDist;
+          const ay2 = box1.y + box1.height / 2 + minDist;
+          
+          const bx1 = box2.x - box2.width / 2 - minDist;
+          const bx2 = box2.x + box2.width / 2 + minDist;
+          const by1 = box2.y - box2.height / 2 - minDist;
+          const by2 = box2.y + box2.height / 2 + minDist;
+          
+          return !(ax2 < bx1 || ax1 > bx2 || ay2 < by1 || ay1 > by2);
+        }
+
+        // 辅助函数：盒子与中心文字是否重叠
+        function overlapsCenter(particle) {
+          const ax1 = particle.x - particle.width / 2 - centerMinDist;
+          const ax2 = particle.x + particle.width / 2 + centerMinDist;
+          const ay1 = particle.y - particle.height / 2 - centerMinDist;
+          const ay2 = particle.y + particle.height / 2 + centerMinDist;
+          
+          const bx1 = centerBox.x;
+          const bx2 = centerBox.x + centerBox.width;
+          const by1 = centerBox.y;
+          const by2 = centerBox.y + centerBox.height;
+          
+          return !(ax2 < bx1 || ax1 > bx2 || ay2 < by1 || ay1 > by2);
+        }
+
+        // 检查边界
+        function clampToBounds(particle) {
+          const halfW = particle.width / 2;
+          const halfH = particle.height / 2;
+          if (particle.x - halfW < edgePadding) particle.x = edgePadding + halfW;
+          if (particle.x + halfW > screenW - edgePadding) particle.x = screenW - edgePadding - halfW;
+          if (particle.y - halfH < edgePadding) particle.y = edgePadding + halfH;
+          if (particle.y + halfH > screenH - edgePadding) particle.y = screenH - edgePadding - halfH;
+        }
+
+        // 主迭代循环
+        for (let iter = 0; iter < maxIterations; iter++) {
           let hasOverlap = false;
-          
-          // 重置速度
-          velocities.forEach(v => { v.vx = 0; v.vy = 0; });
-          
-          // 计算排斥力
-          for (let i = 0; i < points.length; i++) {
-            // 与中心文字的排斥力
-            const dxCenter = points[i].x - centerX;
-            const dyCenter = points[i].y - centerY;
-            const distToCenter = Math.sqrt(dxCenter * dxCenter + dyCenter * dyCenter);
-            
-            const requiredCenterDist = centerMinDist + Math.max(points[i].width, points[i].height) / 2;
-            
-            if (distToCenter < requiredCenterDist && distToCenter > 0) {
+
+          // 重置所有力
+          particles.forEach(p => { p.vx = 0; p.vy = 0; });
+
+          // 检查每对粒子之间的重叠
+          for (let i = 0; i < particles.length; i++) {
+            // 与中心文字碰撞
+            if (overlapsCenter(particles[i])) {
               hasOverlap = true;
-              const force = (requiredCenterDist - distToCenter) / requiredCenterDist * 2;
-              const nx = dxCenter / distToCenter;
-              const ny = dyCenter / distToCenter;
-              velocities[i].vx += nx * force;
-              velocities[i].vy += ny * force;
+              const dx = particles[i].x - centerX;
+              const dy = particles[i].y - centerY;
+              const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+              const force = 8;
+              particles[i].vx += (dx / dist) * force;
+              particles[i].vy += (dy / dist) * force;
             }
-            
-            // 与其他文字的排斥力
-            for (let j = i + 1; j < points.length; j++) {
-              const dx = points[i].x - points[j].x;
-              const dy = points[i].y - points[j].y;
-              const dist = Math.sqrt(dx * dx + dy * dy);
-              
-              const minDist = wordMinDist + (points[i].width + points[j].width) / 4;
-              
-              if (dist < minDist && dist > 0) {
+
+            // 与其他文字碰撞
+            for (let j = i + 1; j < particles.length; j++) {
+              if (boxesOverlap(particles[i], particles[j], wordMinDist)) {
                 hasOverlap = true;
-                const force = (minDist - dist) / minDist * 1.5;
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                const force = 5;
                 const nx = dx / dist;
                 const ny = dy / dist;
                 
-                velocities[i].vx += nx * force;
-                velocities[i].vy += ny * force;
-                velocities[j].vx -= nx * force;
-                velocities[j].vy -= ny * force;
+                particles[i].vx += nx * force;
+                particles[i].vy += ny * force;
+                particles[j].vx -= nx * force;
+                particles[j].vy -= ny * force;
               }
             }
-            
-            // 边界排斥力
-            const leftDist = points[i].x - points[i].width/2 - edgePadding;
-            const rightDist = screenWidth - edgePadding - (points[i].x + points[i].width/2);
-            const topDist = points[i].y - points[i].height/2 - edgePadding;
-            const bottomDist = screenHeight - edgePadding - (points[i].y + points[i].height/2);
-            
-            if (leftDist < 0) velocities[i].vx += 1;
-            if (rightDist < 0) velocities[i].vx -= 1;
-            if (topDist < 0) velocities[i].vy += 1;
-            if (bottomDist < 0) velocities[i].vy -= 1;
+
+            // 边界力
+            const halfW = particles[i].width / 2;
+            const halfH = particles[i].height / 2;
+            if (particles[i].x - halfW < edgePadding) particles[i].vx += 5;
+            if (particles[i].x + halfW > screenW - edgePadding) particles[i].vx -= 5;
+            if (particles[i].y - halfH < edgePadding) particles[i].vy += 5;
+            if (particles[i].y + halfH > screenH - edgePadding) particles[i].vy -= 5;
           }
-          
-          if (!hasOverlap) break;
-          
-          // 应用速度（带阻尼）
-          const damping = 0.5;
-          points.forEach((point, i) => {
-            point.x += velocities[i].vx * damping;
-            point.y += velocities[i].vy * damping;
-            
-            // 限制在边界内
-            point.x = Math.max(edgePadding + point.width/2, Math.min(screenWidth - edgePadding - point.width/2, point.x));
-            point.y = Math.max(edgePadding + point.height/2, Math.min(screenHeight - edgePadding - point.height/2, point.y));
+
+          if (!hasOverlap) {
+            console.log(`布局完成，迭代次数: ${iter + 1}`);
+            break;
+          }
+
+          // 应用速度并限制在边界内
+          particles.forEach(p => {
+            p.x += p.vx * 0.6;
+            p.y += p.vy * 0.6;
+            clampToBounds(p);
           });
         }
-        
-        return points.map(p => ({ x: p.x, y: p.y }));
+
+        return particles.map(p => ({ x: p.x, y: p.y }));
       }
 
       // 渲染文字
@@ -324,60 +359,29 @@
         wordElements.forEach((el, idx) => {
           setTimeout(() => {
             el.classList.add('show');
-          }, idx * 80 + 200);
+          }, idx * 60 + 200);
         });
       }
 
-      // 调试：显示文字边界框（可选，用于验证是否重叠）
-      function showDebugRects(positions, wordSizes) {
-        // 如需查看边界框，取消注释以下代码
-        /*
-        positions.forEach((pos, index) => {
-          const word = words[index];
-          const size = wordSizes[word];
-          const rect = document.createElement('div');
-          rect.style.cssText = `
-            position: absolute;
-            left: ${pos.x - size.width/2}px;
-            top: ${pos.y - size.height/2}px;
-            width: ${size.width}px;
-            height: ${size.height}px;
-            border: 1px solid rgba(255,0,0,0.5);
-            pointer-events: none;
-            z-index: 30;
-          `;
-          document.body.appendChild(rect);
-        });
-        */
-      }
-
-      // 主布局函数
+      // 主函数
       function layoutAll() {
-        screenWidth = window.innerWidth;
-        screenHeight = window.innerHeight;
-        centerX = screenWidth / 2;
-        centerY = screenHeight / 2;
-
-        const wordFontSize = getWordFontSize();
+        const wordFontSize = getCurrentFontSize();
         const centerFontSize = getCenterFontSize();
         const params = getLayoutParams();
         
-        // 测量所有文字的实际尺寸
+        const wordFontStr = getFontString(wordFontSize);
+        const centerFontStr = getFontString(centerFontSize);
+        
+        // 使用Canvas精确测量
         const wordSizes = {};
         words.forEach(word => {
-          wordSizes[word] = measureText(word, wordFontSize, 2);
+          wordSizes[word] = measureTextCanvas(word, wordFontStr);
         });
         
-        const centerSize = measureText("我会喜欢徐依晨的全部", centerFontSize, 4);
+        const centerSize = measureTextCanvas("我会喜欢徐依晨的全部", centerFontStr);
         
-        // 使用力导向算法计算位置
-        const positions = calculatePositions(wordSizes, centerSize, params);
-        
-        // 渲染文字
+        const positions = physicsLayout(wordSizes, centerSize, params);
         renderWords(positions);
-        
-        // 可选：显示调试边界框
-        // showDebugRects(positions, wordSizes);
         
         centerTextEl.style.opacity = '1';
       }
@@ -392,10 +396,10 @@
 
         resizeTimer = setTimeout(() => {
           layoutAll();
-        }, 500);
+        }, 600);
       }
 
-      // 初始化
+      // 启动
       window.addEventListener('load', () => {
         centerTextEl.style.opacity = '0';
         setTimeout(layoutAll, 300);
