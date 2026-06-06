@@ -12,8 +12,8 @@
     }
 
     body {
-      background: #050505;
-      color: #f5ecd7;
+      background: #0a0a0a;
+      color: #f0e6d2;
       font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", "PingFang SC", "Noto Serif SC", serif;
       width: 100vw;
       height: 100vh;
@@ -21,75 +21,65 @@
       position: relative;
     }
 
-    /* 中心文字 - 绝对居中，清晰显眼 */
+    /* 中心文字 - 绝对居中 */
     .center-text {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: clamp(38px, 6.5vw, 68px);
+      font-size: clamp(40px, 7vw, 72px);
       font-weight: 400;
       font-style: italic;
       white-space: nowrap;
       z-index: 20;
       opacity: 0;
-      transition: opacity 1.4s ease;
-      text-shadow: 0 0 30px rgba(255, 235, 190, 0.55), 0 0 70px rgba(255, 200, 140, 0.35);
-      letter-spacing: 3px;
+      transition: opacity 1.5s ease;
+      text-shadow: 0 0 35px rgba(255, 235, 190, 0.6), 0 0 80px rgba(255, 200, 140, 0.4);
+      letter-spacing: 4px;
       pointer-events: none;
-      animation: softGlow 3.5s ease-in-out infinite alternate;
-      color: #fff9ef;
+      animation: centerGlow 4s ease-in-out infinite alternate;
+      color: #fffdf5;
     }
 
-    @keyframes softGlow {
+    @keyframes centerGlow {
       0% {
-        text-shadow: 0 0 22px rgba(255, 235, 190, 0.5), 0 0 55px rgba(255, 200, 140, 0.3);
+        text-shadow: 0 0 25px rgba(255, 235, 190, 0.5), 0 0 60px rgba(255, 200, 140, 0.3);
       }
       100% {
-        text-shadow: 0 0 38px rgba(255, 235, 190, 0.75), 0 0 85px rgba(255, 200, 140, 0.45);
+        text-shadow: 0 0 45px rgba(255, 235, 190, 0.8), 0 0 100px rgba(255, 200, 140, 0.5);
       }
     }
 
-    /* 周围文字样式 - 更大，无规律漂浮 */
+    /* 周围文字样式 */
     .word {
       position: absolute;
-      font-size: clamp(19px, 3vw, 32px);
+      font-size: clamp(17px, 2.6vw, 28px);
       font-style: italic;
       white-space: nowrap;
       opacity: 0;
-      transition: opacity 0.9s ease;
+      transition: opacity 1s ease;
       z-index: 5;
       pointer-events: none;
-      text-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
-      animation: gentleDrift 5.5s ease-in-out infinite alternate;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.25);
       font-weight: 350;
-      color: #e8d7b5;
-      letter-spacing: 0.5px;
+      color: #e0d0b0;
+      letter-spacing: 1px;
+      will-change: transform;
     }
 
     .word.show {
       opacity: 1;
     }
 
-    /* 每个文字漂浮节奏、方向随机（通过JS设置不同动画参数） */
-    @keyframes gentleDrift {
-      0% {
-        transform: translate(0, 0);
-      }
-      100% {
-        transform: translate(12px, -12px);
-      }
-    }
-
-    /* 极简中心光晕背景 */
+    /* 中心光晕背景 */
     .center-aura {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 200px;
-      height: 200px;
-      background: radial-gradient(circle, rgba(255, 210, 150, 0.07) 0%, transparent 70%);
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(255, 210, 150, 0.06) 0%, transparent 70%);
       border-radius: 50%;
       z-index: 1;
       pointer-events: none;
@@ -103,7 +93,6 @@
 
   <script>
     (function() {
-      // 所有文字内容（共37个短语）
       const words = [
         "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛",
         "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽",
@@ -117,252 +106,327 @@
 
       const container = document.getElementById('wordsContainer');
       const centerTextEl = document.getElementById('centerText');
-      
+
       let screenWidth = window.innerWidth;
       let screenHeight = window.innerHeight;
       let centerX = screenWidth / 2;
       let centerY = screenHeight / 2;
 
-      // ----- 自适应参数（保证无重叠的关键）-----
-      function getSpacingParams() {
+      // 存储所有已放置文字的实际渲染尺寸信息
+      let placedRects = [];
+
+      // 获取文字元素的实际占用矩形（考虑字体大小和文字长度）
+      function getTextRect(x, y, text, fontSize) {
+        // 估算文字宽度：中文字符约等于fontSize宽度，英文和标点约0.5倍
+        const charWidth = fontSize * 0.9;
+        const textWidth = text.length * charWidth;
+        const textHeight = fontSize * 1.2;
+        
+        return {
+          left: x - textWidth / 2,
+          top: y - textHeight / 2,
+          right: x + textWidth / 2,
+          bottom: y + textHeight / 2,
+          width: textWidth,
+          height: textHeight
+        };
+      }
+
+      // 检查两个矩形是否重叠（包含缓冲区）
+      function rectsOverlap(rect1, rect2, buffer = 15) {
+        return !(
+          rect1.right + buffer < rect2.left ||
+          rect1.left - buffer > rect2.right ||
+          rect1.bottom + buffer < rect2.top ||
+          rect1.top - buffer > rect2.bottom
+        );
+      }
+
+      // 获取自适应参数
+      function getParams() {
         const w = screenWidth;
         if (w < 480) {
           return {
-            centerClearance: 105,      // 中心保护半径
-            wordSpacing: 62,           // 文字之间最小距离
-            edgeMargin: 28,
-            maxAttempts: 400,
+            centerClearance: 130,
+            wordBuffer: 18,
+            edgeMargin: 30,
+            maxAttempts: 600,
+            leftBias: 0.65, // 左偏系数（0-1，越小越偏左）
           };
         } else if (w < 768) {
           return {
-            centerClearance: 140,
-            wordSpacing: 78,
-            edgeMargin: 38,
-            maxAttempts: 350,
+            centerClearance: 170,
+            wordBuffer: 24,
+            edgeMargin: 40,
+            maxAttempts: 500,
+            leftBias: 0.6,
           };
         } else if (w < 1024) {
           return {
-            centerClearance: 185,
-            wordSpacing: 95,
-            edgeMargin: 50,
-            maxAttempts: 300,
+            centerClearance: 220,
+            wordBuffer: 30,
+            edgeMargin: 55,
+            maxAttempts: 400,
+            leftBias: 0.55,
           };
         } else {
           return {
-            centerClearance: 230,
-            wordSpacing: 115,
-            edgeMargin: 65,
-            maxAttempts: 250,
+            centerClearance: 270,
+            wordBuffer: 38,
+            edgeMargin: 70,
+            maxAttempts: 350,
+            leftBias: 0.5,
           };
         }
       }
 
-      // ----- 碰撞检测：检查(x,y)是否与已存在位置过近 -----
-      function hasCollision(x, y, occupied, params) {
-        for (let pos of occupied) {
-          const requiredDist = pos.isCenter ? params.centerClearance : params.wordSpacing;
-          const dx = x - pos.x;
-          const dy = y - pos.y;
-          if (Math.sqrt(dx * dx + dy * dy) < requiredDist) {
-            return true; // 碰撞
-          }
-        }
-        return false;
-      }
-
-      // ----- 生成完全随机、无重叠的位置数组 -----
-      function generateRandomPositions(count, params) {
+      // 生成无重叠、偏左的位置
+      function generatePositions(count, params) {
         const positions = [];
-        // 已占用列表，包含中心点
-        const occupied = [
-          { x: centerX, y: centerY, isCenter: true }
-        ];
+        placedRects = [];
 
-        const { edgeMargin, maxAttempts } = params;
+        const { centerClearance, wordBuffer, edgeMargin, maxAttempts, leftBias } = params;
+
+        // 先添加中心文字占用区域
+        const centerFontSize = screenWidth < 480 ? 40 : screenWidth < 768 ? 48 : screenWidth < 1024 ? 58 : 72;
+        const centerRect = getTextRect(centerX, centerY, "我会喜欢徐依晨的全部", centerFontSize);
+        // 扩大中心保护区域
+        const centerProtected = {
+          left: centerRect.left - centerClearance,
+          top: centerRect.top - centerClearance,
+          right: centerRect.right + centerClearance,
+          bottom: centerRect.bottom + centerClearance,
+          isCenter: true
+        };
+        placedRects.push(centerProtected);
+
+        // 可用区域范围
         const minX = edgeMargin;
         const maxX = screenWidth - edgeMargin;
         const minY = edgeMargin;
         const maxY = screenHeight - edgeMargin;
 
+        // 预先估算每个文字的大小（使用平均字体大小）
+        const avgFontSize = screenWidth < 480 ? 17 : screenWidth < 768 ? 20 : screenWidth < 1024 ? 24 : 28;
+
         for (let i = 0; i < count; i++) {
           let placed = false;
           let finalX = 0, finalY = 0;
-          
-          // 尝试随机位置
+
           for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            // 完全随机坐标（无规律散开）
-            const randX = minX + Math.random() * (maxX - minX);
-            const randY = minY + Math.random() * (maxY - minY);
-            
-            // 边界检查（再次确保）
-            if (randX < minX || randX > maxX || randY < minY || randY > maxY) {
+            // 使用左偏分布：用幂函数让x坐标倾向于左侧
+            // leftBias越小，越偏左。0.5表示均匀，0.3表示强烈偏左
+            const xRatio = Math.pow(Math.random(), 1.5 - leftBias * 0.8);
+            const yRatio = Math.random();
+
+            const x = minX + xRatio * (maxX - minX);
+            const y = minY + yRatio * (maxY - minY);
+
+            // 边界检查
+            if (x < minX || x > maxX || y < minY || y > maxY) {
               continue;
             }
-            
-            // 碰撞检测
-            if (!hasCollision(randX, randY, occupied, params)) {
-              finalX = randX;
-              finalY = randY;
+
+            // 计算当前文字的预估矩形
+            const wordText = words[i];
+            const textRect = getTextRect(x, y, wordText, avgFontSize);
+
+            // 碰撞检测：与所有已放置的矩形比较
+            let hasOverlap = false;
+            for (const placedRect of placedRects) {
+              const buffer = placedRect.isCenter ? centerClearance : wordBuffer;
+              if (rectsOverlap(textRect, placedRect, buffer)) {
+                hasOverlap = true;
+                break;
+              }
+            }
+
+            if (!hasOverlap) {
+              finalX = x;
+              finalY = y;
               placed = true;
               break;
             }
           }
-          
-          // 如果找不到合适位置（极少情况），采用退避策略：在可用空间内强制放置
+
+          // 如果未找到位置，使用网格退避策略
           if (!placed) {
-            // 尝试在屏幕四个角落区域寻找空隙
-            const corners = [
-              { x: minX + 20, y: minY + 20 },
-              { x: maxX - 20, y: minY + 20 },
-              { x: minX + 20, y: maxY - 20 },
-              { x: maxX - 20, y: maxY - 20 },
-            ];
-            let backupPlaced = false;
-            for (let corner of corners) {
-              if (!hasCollision(corner.x, corner.y, occupied, params)) {
-                finalX = corner.x;
-                finalY = corner.y;
-                backupPlaced = true;
+            // 在屏幕上创建虚拟网格，寻找空位
+            const gridSize = avgFontSize * 3;
+            const cols = Math.floor((maxX - minX) / gridSize);
+            const rows = Math.floor((maxY - minY) / gridSize);
+            
+            let found = false;
+            // 随机打乱网格顺序
+            const cells = [];
+            for (let r = 0; r < rows; r++) {
+              for (let c = 0; c < cols; c++) {
+                cells.push({ r, c });
+              }
+            }
+            // Fisher-Yates 洗牌
+            for (let k = cells.length - 1; k > 0; k--) {
+              const j = Math.floor(Math.random() * (k + 1));
+              [cells[k], cells[j]] = [cells[j], cells[k]];
+            }
+
+            for (const cell of cells) {
+              const gx = minX + cell.c * gridSize + gridSize / 2;
+              const gy = minY + cell.r * gridSize + gridSize / 2;
+              
+              if (gx < minX || gx > maxX || gy < minY || gy > maxY) continue;
+              
+              const textRect = getTextRect(gx, gy, words[i], avgFontSize);
+              let overlap = false;
+              for (const placedRect of placedRects) {
+                const buffer = placedRect.isCenter ? centerClearance : wordBuffer;
+                if (rectsOverlap(textRect, placedRect, buffer)) {
+                  overlap = true;
+                  break;
+                }
+              }
+              if (!overlap) {
+                finalX = gx;
+                finalY = gy;
+                found = true;
                 break;
               }
             }
-            // 最后手段：略微减小间距要求，但保持中心距离
-            if (!backupPlaced) {
-              for (let attempt = 0; attempt < 200; attempt++) {
-                const rx = minX + Math.random() * (maxX - minX);
-                const ry = minY + Math.random() * (maxY - minY);
-                // 只检查中心距离，放宽文字间距
-                const distToCenter = Math.hypot(rx - centerX, ry - centerY);
-                if (distToCenter >= params.centerClearance * 0.9) {
-                  let tooClose = false;
-                  for (let pos of occupied) {
-                    if (pos.isCenter) continue;
-                    if (Math.hypot(rx - pos.x, ry - pos.y) < params.wordSpacing * 0.7) {
-                      tooClose = true;
-                      break;
-                    }
-                  }
-                  if (!tooClose) {
-                    finalX = rx;
-                    finalY = ry;
-                    backupPlaced = true;
+
+            if (!found) {
+              // 最终回退：放在屏幕角落
+              const corners = [
+                { x: minX + avgFontSize * 2, y: minY + avgFontSize * 2 },
+                { x: maxX - avgFontSize * 2, y: minY + avgFontSize * 2 },
+                { x: minX + avgFontSize * 2, y: maxY - avgFontSize * 2 },
+                { x: maxX - avgFontSize * 2, y: maxY - avgFontSize * 2 },
+              ];
+              for (const corner of corners) {
+                const textRect = getTextRect(corner.x, corner.y, words[i], avgFontSize);
+                let overlap = false;
+                for (const placedRect of placedRects) {
+                  if (rectsOverlap(textRect, placedRect, wordBuffer * 0.6)) {
+                    overlap = true;
                     break;
                   }
                 }
+                if (!overlap) {
+                  finalX = corner.x;
+                  finalY = corner.y;
+                  found = true;
+                  break;
+                }
               }
             }
-            // 若仍失败，使用随机位置但至少保证不覆盖中心
-            if (!backupPlaced) {
+
+            if (!found) {
               finalX = minX + Math.random() * (maxX - minX);
               finalY = minY + Math.random() * (maxY - minY);
             }
           }
-          
-          // 记录位置
+
+          // 记录位置和占用矩形
           positions.push({ x: finalX, y: finalY });
-          occupied.push({ x: finalX, y: finalY, isCenter: false });
+          const wordText = words[i];
+          const finalRect = getTextRect(finalX, finalY, wordText, avgFontSize);
+          placedRects.push({ ...finalRect, isCenter: false });
         }
-        
+
         return positions;
       }
 
-      // ----- 渲染文字到页面，并设置无规律动画 -----
+      // 渲染文字
       function renderWords(posArray) {
         container.innerHTML = '';
         const fragment = document.createDocumentFragment();
-        
+
         words.forEach((word, index) => {
           const pos = posArray[index];
           if (!pos) return;
-          
+
           const div = document.createElement('div');
           div.className = 'word';
           div.textContent = word;
           div.style.left = `${pos.x}px`;
           div.style.top = `${pos.y}px`;
-          
-          // 让每个文字动画完全无规律：不同时长、延迟、甚至方向微调
-          const duration = 4.2 + Math.random() * 5.5; // 4.2s ~ 9.7s
-          const delay = Math.random() * 4;
-          // 随机决定漂浮方向（通过修改动画关键帧变量，这里用自定义属性辅助）
-          const driftX = (Math.random() * 16) - 4; // -4px ~ 12px
-          const driftY = (Math.random() * 16) - 12; // -12px ~ 4px
-          
-          // 为每个文字创建独特的动画（使用CSS自定义属性无法直接用于@keyframes，改用内联样式覆盖）
-          // 这里采用动态注入关键帧的方式，但为了性能，使用随机动画名称模式。
-          // 更简单：直接设置不同的animation-name，但需要动态创建style。我们采用修改transform偏移量的方式。
-          // 实际上我们可以通过设置多个预定义动画类，但这里为了真正的无规律，采用JS驱动轻微变化。
-          // 最佳实践：使用CSS变量结合animation，但此处为了简洁，我们使用不同的动画持续时间与延迟，
-          // 并且额外添加一个微小的随机初始偏移。
-          
-          div.style.animationDuration = `${duration}s`;
-          div.style.animationDelay = `${delay}s`;
-          
-          // 额外添加一个随机的初始位移，让起始位置也有微妙差异
-          const initOffsetX = (Math.random() * 8) - 4;
-          const initOffsetY = (Math.random() * 8) - 4;
-          div.style.transform = `translate(${initOffsetX}px, ${initOffsetY}px)`;
-          
-          // 为了让动画从当前偏移开始并漂移，我们需要调整动画关键帧。
-          // 由于无法为每个元素单独定义@keyframes，我们使用一个技巧：
-          // 所有元素使用同一个动画名，但通过animation-direction和初始transform实现差异。
-          // 这里我们设置动画为alternate，并调整初始状态。
-          
+          div.style.transform = 'translate(-50%, -50%)'; // 以文字中心为定位点
+
+          // 随机漂浮动画参数
+          const duration = 5 + Math.random() * 6;
+          const delay = Math.random() * 5;
+          div.style.animation = `float${Math.floor(Math.random() * 3)} ${duration}s ease-in-out ${delay}s infinite alternate`;
+
           fragment.appendChild(div);
         });
-        
+
         container.appendChild(fragment);
-        
-        // 渐次显示文字
+
+        // 渐次显示
         const wordElements = container.querySelectorAll('.word');
         wordElements.forEach((el, idx) => {
           setTimeout(() => {
             el.classList.add('show');
-          }, idx * 65 + 200);
+          }, idx * 70 + 200);
         });
       }
 
-      // ----- 主布局函数 -----
+      // 动态注入多个漂浮动画
+      function injectAnimations() {
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes float0 {
+            0% { transform: translate(-50%, -50%) translate(0, 0); }
+            100% { transform: translate(-50%, -50%) translate(8px, -10px); }
+          }
+          @keyframes float1 {
+            0% { transform: translate(-50%, -50%) translate(0, 0); }
+            100% { transform: translate(-50%, -50%) translate(-6px, -8px); }
+          }
+          @keyframes float2 {
+            0% { transform: translate(-50%, -50%) translate(0, 0); }
+            100% { transform: translate(-50%, -50%) translate(10px, -12px); }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      // 主布局
       function layoutAll() {
-        // 更新尺寸
         screenWidth = window.innerWidth;
         screenHeight = window.innerHeight;
         centerX = screenWidth / 2;
         centerY = screenHeight / 2;
-        
-        const params = getSpacingParams();
-        const positions = generateRandomPositions(words.length, params);
+
+        const params = getParams();
+        const positions = generatePositions(words.length, params);
         renderWords(positions);
-        
-        // 中心文字显现
         centerTextEl.style.opacity = '1';
       }
 
-      // ----- 窗口调整防抖 -----
+      // 防抖重绘
       let resizeTimer;
       function onResize() {
         clearTimeout(resizeTimer);
-        // 隐藏所有文字
         const allWords = container.querySelectorAll('.word');
         allWords.forEach(el => el.classList.remove('show'));
         centerTextEl.style.opacity = '0';
-        
+
         resizeTimer = setTimeout(() => {
           layoutAll();
-        }, 400);
+        }, 500);
       }
 
-      // 启动
+      // 初始化
       window.addEventListener('load', () => {
+        injectAnimations();
         centerTextEl.style.opacity = '0';
-        setTimeout(layoutAll, 120);
+        setTimeout(layoutAll, 150);
       });
 
       window.addEventListener('resize', onResize);
       window.addEventListener('orientationchange', () => {
-        setTimeout(onResize, 150);
+        setTimeout(onResize, 200);
       });
-
     })();
   </script>
 </body>
