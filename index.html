@@ -2,24 +2,9 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <!-- iOS 核心适配：禁止缩放、适配视口、全屏、强制横屏 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <!-- 强制页面横屏（兼容苹果/安卓所有浏览器） -->
-  <style>
-    @media screen and (orientation: portrait) {
-      body {
-        transform: rotate(90deg);
-        transform-origin: center center;
-        width: 100vh;
-        height: 100vw;
-        position: fixed;
-        top: 0;
-        left: 0;
-      }
-    }
-  </style>
   <title>喜欢徐依晨的全部</title>
   <style>
     * {
@@ -42,28 +27,26 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 28px;
+      font-size: clamp(24px, 5vw, 36px);
       font-style: italic;
       opacity: 0;
       transition: opacity 0.8s ease;
       z-index: 99;
       white-space: nowrap;
     }
-    /* 环绕小字 - 基础样式 */
+    /* 环绕小字 */
     .word {
       position: absolute;
-      font-size: 16px;
+      font-size: clamp(14px, 3vw, 20px);
       opacity: 0;
       transition: opacity 0.8s ease;
       font-style: italic;
       white-space: nowrap;
-      /* 漂浮动画 */
       animation: float 4s ease-in-out infinite alternate;
     }
     .word.show {
       opacity: 1;
     }
-    /* 缓慢漂浮 */
     @keyframes float {
       0% { transform: translate(0, 0); }
       100% { transform: translate(5px, -5px); }
@@ -90,7 +73,6 @@
     const centerText = document.getElementById('centerText');
     let usedPos = [];
 
-    // 初始化文字布局（高容错、强防重叠）
     function createWords() {
       usedPos = [];
       container.innerHTML = "";
@@ -100,53 +82,73 @@
       const cx = w / 2;
       const cy = h / 2;
 
-      // 距离中心最小距离 + 文字之间安全距离（彻底解决堆叠）
-      const safeRadius = 170;
-      const gap = 100;
+      // 分成3个环形，彻底分散文字，避免挤在同一圈
+      const rings = [
+        { radius: 160, count: 12 },
+        { radius: 220, count: 12 },
+        { radius: 280, count: 12 }
+      ];
 
-      words.forEach((item, idx) => {
-        const el = document.createElement('div');
-        el.className = "word";
-        el.innerText = item;
-        container.appendChild(el);
+      let idx = 0;
+      rings.forEach((ring, ringIndex) => {
+        const startAngle = (ringIndex * Math.PI * 2) / 3;
+        for (let i = 0; i < ring.count && idx < words.length; i++) {
+          const item = words[idx];
+          const el = document.createElement('div');
+          el.className = "word";
+          el.innerText = item;
+          container.appendChild(el);
 
-        let x, y, tryTimes = 0;
-        // 循环寻找合法位置，最多尝试300次，保证一定不重叠
-        while (tryTimes < 300) {
-          const angle = Math.random() * Math.PI * 2;
-          const r = safeRadius + Math.random() * 220;
-          x = cx + Math.cos(angle) * r;
-          y = cy + Math.sin(angle) * r;
+          // 环形均匀分布，先固定一个大致位置
+          let angle = startAngle + (i / ring.count) * Math.PI * 2;
+          let r = ring.radius + (Math.random() - 0.5) * 40; // 给一点随机偏移，避免太规整
+          let x = cx + Math.cos(angle) * r;
+          let y = cy + Math.sin(angle) * r;
 
-          // 边界限制：不让文字跑出屏幕
-          if (x < 50 || x > w - 50 || y < 50 || y > h - 50) {
-            tryTimes++;
-            continue;
-          }
+          // 边界保护
+          if (x < 50) x = 50;
+          if (x > w - 50) x = w - 50;
+          if (y < 50) y = 50;
+          if (y > h - 50) y = h - 50;
 
-          // 检测和已有文字是否重叠
-          let overlap = false;
-          for (let p of usedPos) {
-            const dist = Math.hypot(x - p.x, y - p.y);
-            if (dist < gap) {
-              overlap = true;
-              break;
+          // 碰撞检测：和已有的文字保持距离，重叠就微调位置
+          let tryTimes = 0;
+          while (tryTimes < 100) {
+            let overlap = false;
+            for (let p of usedPos) {
+              const dist = Math.hypot(x - p.x, y - p.y);
+              if (dist < 90) { // 文字之间至少保持90px的安全距离
+                overlap = true;
+                break;
+              }
             }
+
+            if (!overlap) break;
+
+            // 微调角度，换个位置
+            angle += 0.1;
+            x = cx + Math.cos(angle) * r;
+            y = cy + Math.sin(angle) * r;
+
+            if (x < 50) x = 50;
+            if (x > w - 50) x = w - 50;
+            if (y < 50) y = 50;
+            if (y > h - 50) y = h - 50;
+
+            tryTimes++;
           }
 
-          if (!overlap) break;
-          tryTimes++;
+          usedPos.push({ x, y });
+          el.style.left = x + "px";
+          el.style.top = y + "px";
+
+          // 随机动画节奏
+          el.style.animationDuration = (3 + Math.random() * 2) + "s";
+          el.style.animationDelay = Math.random() + "s";
+
+          setTimeout(() => el.classList.add("show"), idx * 80);
+          idx++;
         }
-
-        usedPos.push({ x, y });
-        el.style.left = x + "px";
-        el.style.top = y + "px";
-
-        // 随机动画，漂浮更自然
-        el.style.animationDuration = (3 + Math.random() * 2) + "s";
-        el.style.animationDelay = Math.random() + "s";
-
-        setTimeout(() => el.classList.add("show"), idx * 80);
       });
     }
 
@@ -156,7 +158,7 @@
       setTimeout(createWords, 400);
     });
 
-    // 屏幕旋转/尺寸变化 自动重排（苹果手机必备）
+    // 屏幕旋转/尺寸变化自动重排
     window.addEventListener("resize", () => {
       setTimeout(createWords, 200);
     });
