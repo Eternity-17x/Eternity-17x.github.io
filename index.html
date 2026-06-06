@@ -19,13 +19,13 @@
       height: 100vh;
       position: relative;
     }
-    /* 中心文字样式（适配横屏） */
+    /* 中心文字 */
     .center-text {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: clamp(20px, 4vw, 32px);
+      font-size: clamp(20px, 6vw, 32px);
       font-weight: normal;
       font-style: italic;
       opacity: 0;
@@ -33,10 +33,10 @@
       z-index: 10;
       white-space: nowrap;
     }
-    /* 周围文字样式（适配横屏） */
+    /* 周围文字 */
     .word {
       position: absolute;
-      font-size: clamp(12px, 3vw, 18px);
+      font-size: clamp(12px, 4vw, 18px);
       opacity: 0;
       transition: opacity 0.8s ease;
       font-style: italic;
@@ -46,13 +46,12 @@
     .word.show {
       opacity: 1;
     }
-    /* 缓慢漂浮动画 */
     @keyframes float {
       0% {
         transform: translate(0, 0);
       }
       100% {
-        transform: translate(6px, -6px);
+        transform: translate(5px, -5px);
       }
     }
   </style>
@@ -75,13 +74,17 @@
 
     const container = document.getElementById('wordsContainer');
     const centerText = document.getElementById('centerText');
-    const positions = [];
+    let positions = [];
 
     function initWords() {
+      positions = [];
+      container.innerHTML = '';
+
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
-      const minDistFromCenter = 160;   // 横屏适配的中心距离
-      const minDistBetweenWords = 90;  // 横屏适配的防重叠距离
+      // 竖屏适配参数
+      const minDistFromCenter = 180;
+      const minDistBetweenWords = 80;
 
       words.forEach((word, index) => {
         const div = document.createElement('div');
@@ -92,15 +95,14 @@
         let validPosition = false;
         let x, y, attempts = 0;
 
-        while (!validPosition && attempts < 150) {
-          // 横屏优化：极坐标分布，适配宽屏比例
+        while (!validPosition && attempts < 200) {
           const angle = Math.random() * 2 * Math.PI;
-          const radius = minDistFromCenter + Math.random() * Math.min(window.innerWidth, window.innerHeight) / 2.5;
+          const radius = minDistFromCenter + Math.random() * Math.min(window.innerWidth, window.innerHeight) / 2.2;
           x = centerX + Math.cos(angle) * radius;
           y = centerY + Math.sin(angle) * radius;
 
-          // 横屏边界检查，避免文字跑出屏幕
-          if (x < 40 || x > window.innerWidth - 40 || y < 40 || y > window.innerHeight - 40) {
+          // 边界检查，避免文字跑出手机屏幕
+          if (x < 30 || x > window.innerWidth - 30 || y < 30 || y > window.innerHeight - 30) {
             attempts++;
             continue;
           }
@@ -125,7 +127,6 @@
         div.style.left = `${x}px`;
         div.style.top = `${y}px`;
 
-        // 随机动画节奏，让漂浮更自然
         const duration = 3 + Math.random() * 2;
         const delay = Math.random() * 2;
         div.style.animationDuration = `${duration}s`;
@@ -137,21 +138,13 @@
       });
     }
 
-    // 监听窗口大小变化，自动重新布局（适配旋转/横屏）
-    function updateLayout() {
-      positions.length = 0;
-      container.innerHTML = '';
-      initWords();
-    }
-
-    // 页面加载完成后初始化
     window.onload = () => {
       centerText.style.opacity = '1';
       setTimeout(initWords, 500);
     };
 
-    // 监听窗口尺寸变化（手机横竖屏切换时自动重排）
-    window.addEventListener('resize', updateLayout);
+    // 窗口变化时自动重排
+    window.addEventListener('resize', initWords);
   </script>
 </body>
 </html>
