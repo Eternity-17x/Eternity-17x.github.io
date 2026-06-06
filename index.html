@@ -1,146 +1,306 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>喜欢徐依晨的全部</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #000;
-      color: #fff;
-      font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", sans-serif;
-      overflow: hidden;
-    }
-    /* 中心文字样式 */
-    .center-text {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 32px;
-      font-weight: normal;
-      font-style: italic;
-      opacity: 0;
-      transition: opacity 0.8s ease;
-      z-index: 10; /* 保证中心文字在最上层 */
-    }
-    /* 周围文字样式 */
-    .word {
-      position: absolute;
-      font-size: 20px;
-      opacity: 0;
-      transition: opacity 0.8s ease;
-      font-style: italic;
-      white-space: nowrap;
-      animation: float 4s ease-in-out infinite alternate;
-    }
-    .word.show {
-      opacity: 1;
-    }
-    /* 缓慢漂浮动画 */
-    @keyframes float {
-      0% {
-        transform: translate(0, 0);
-      }
-      100% {
-        transform: translate(6px, -6px);
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="center-text" id="centerText">我会喜欢徐依晨的全部</div>
-  <div id="wordsContainer"></div>
-
-  <script>
-    // 所有文字内容
-    const words = [
-      "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛", 
-      "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽", 
-      "徐依晨的声音", "徐依晨的开朗", "徐依晨的不堪", "徐依晨的优点", "徐依晨的腼腆", 
-      "徐依晨的窘迫", "徐依晨的脆弱", "徐依晨的生气", "徐依晨的底线", "徐依晨的古板", 
-      "徐依晨的家人", "徐依晨的人格", "徐依晨的家乡", "徐依晨的三观", "徐依晨的嗜好", 
-      "徐依晨的灵动", "徐依晨的善良", "徐依晨的经历", "徐依晨的生日", "徐依晨的浪漫", 
-      "徐依晨的不甘", "徐依晨的固执", "徐依晨的朋友", "徐依晨的尊严", "徐依晨的天真", 
-      "徐依晨的美好", "徐依晨的血型"
-    ];
-
-    const container = document.getElementById('wordsContainer');
-    const centerText = document.getElementById('centerText');
-    const positions = []; // 记录已放置的文字位置，避免重叠
-
-    function initWords() {
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      const minDistFromCenter = 200;   // 距离中心文字的最小距离
-      const minDistBetweenWords = 110;  // 文字之间的最小距离，防止重叠
-
-      words.forEach((word, index) => {
-        const div = document.createElement('div');
-        div.className = 'word';
-        div.textContent = word;
-        container.appendChild(div);
-
-        let validPosition = false;
-        let x, y, attempts = 0;
-
-        // 最多尝试150次，找到一个不重叠的位置
-        while (!validPosition && attempts < 150) {
-          // 用极坐标生成围绕中心的随机位置，确保分布均匀
-          const angle = Math.random() * 2 * Math.PI;
-          const radius = minDistFromCenter + Math.random() * Math.min(window.innerWidth, window.innerHeight) / 3;
-          x = centerX + Math.cos(angle) * radius;
-          y = centerY + Math.sin(angle) * radius;
-
-          // 边界检查：文字不能跑到屏幕外
-          if (x < 60 || x > window.innerWidth - 60 || y < 60 || y > window.innerHeight - 60) {
-            attempts++;
-            continue;
-          }
-
-          // 碰撞检测：检查和已有的文字是否重叠
-          let tooClose = false;
-          for (const pos of positions) {
-            const dist = Math.hypot(x - pos.x, y - pos.y);
-            if (dist < minDistBetweenWords) {
-              tooClose = true;
-              break;
-            }
-          }
-
-          if (!tooClose) {
-            validPosition = true;
-            positions.push({ x, y });
-          }
-          attempts++;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>喜欢徐依晨的全部</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #fff;
+            font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
         }
 
-        // 设置最终位置
-        div.style.left = `${x}px`;
-        div.style.top = `${y}px`;
+        /* 中心文字样式 - 偏左放置 */
+        .center-text {
+            position: absolute;
+            top: 50%;
+            left: 32%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: normal;
+            font-style: italic;
+            opacity: 0;
+            transition: opacity 1s ease;
+            z-index: 10;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.5), 0 0 60px rgba(255, 255, 255, 0.25);
+            white-space: nowrap;
+            pointer-events: none;
+            animation: centerGlow 3s ease-in-out infinite alternate;
+        }
 
-        // 随机漂浮参数，让每个文字的动画节奏不一样
-        const duration = 3 + Math.random() * 2;
-        const delay = Math.random() * 2;
-        div.style.animationDuration = `${duration}s`;
-        div.style.animationDelay = `${delay}s`;
+        @keyframes centerGlow {
+            0% {
+                text-shadow: 0 0 20px rgba(255, 255, 255, 0.4), 0 0 50px rgba(255, 255, 255, 0.2);
+            }
+            100% {
+                text-shadow: 0 0 40px rgba(255, 255, 255, 0.7), 0 0 80px rgba(255, 255, 255, 0.35);
+            }
+        }
 
-        // 逐个显示文字
-        setTimeout(() => {
-          div.classList.add('show');
-        }, index * 100);
-      });
-    }
+        /* 周围文字样式 */
+        .word {
+            position: absolute;
+            font-size: 26px;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            font-style: italic;
+            white-space: nowrap;
+            pointer-events: none;
+            animation: float 4s ease-in-out infinite alternate;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        }
+        .word.show {
+            opacity: 1;
+        }
 
-    // 页面加载完成后执行
-    window.onload = () => {
-      // 先显示中心文字
-      centerText.style.opacity = '1';
-      // 延迟加载周围文字
-      setTimeout(initWords, 500);
-    };
-  </script>
+        /* 缓慢漂浮动画 - 幅度稍大 */
+        @keyframes float {
+            0% {
+                transform: translate(0, 0);
+            }
+            100% {
+                transform: translate(9px, -9px);
+            }
+        }
+
+        /* ========== 响应式：平板 ========== */
+        @media (max-width: 1024px) {
+            .center-text {
+                font-size: 38px;
+                left: 33%;
+            }
+            .word {
+                font-size: 22px;
+            }
+            @keyframes float {
+                0% {
+                    transform: translate(0, 0);
+                }
+                100% {
+                    transform: translate(7px, -7px);
+                }
+            }
+        }
+
+        /* ========== 响应式：手机 ========== */
+        @media (max-width: 768px) {
+            .center-text {
+                font-size: 28px;
+                left: 34%;
+            }
+            .word {
+                font-size: 18px;
+            }
+            @keyframes float {
+                0% {
+                    transform: translate(0, 0);
+                }
+                100% {
+                    transform: translate(5px, -5px);
+                }
+            }
+        }
+
+        /* ========== 响应式：小手机 ========== */
+        @media (max-width: 480px) {
+            .center-text {
+                font-size: 24px;
+                left: 35%;
+            }
+            .word {
+                font-size: 16px;
+            }
+            @keyframes float {
+                0% {
+                    transform: translate(0, 0);
+                }
+                100% {
+                    transform: translate(4px, -4px);
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="center-text" id="centerText">我会喜欢徐依晨的全部</div>
+    <div id="wordsContainer"></div>
+
+    <script>
+        // 所有文字内容
+        const words = [
+            "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛",
+            "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽",
+            "徐依晨的声音", "徐依晨的开朗", "徐依晨的不堪", "徐依晨的优点", "徐依晨的腼腆",
+            "徐依晨的窘迫", "徐依晨的脆弱", "徐依晨的生气", "徐依晨的底线", "徐依晨的古板",
+            "徐依晨的家人", "徐依晨的人格", "徐依晨的家乡", "徐依晨的三观", "徐依晨的嗜好",
+            "徐依晨的灵动", "徐依晨的善良", "徐依晨的经历", "徐依晨的生日", "徐依晨的浪漫",
+            "徐依晨的不甘", "徐依晨的固执", "徐依晨的朋友", "徐依晨的尊严", "徐依晨的天真",
+            "徐依晨的美好", "徐依晨的血型"
+        ];
+
+        const container = document.getElementById('wordsContainer');
+        const centerText = document.getElementById('centerText');
+        const positions = []; // 记录已放置文字的位置，避免重叠
+
+        function getAdaptiveParams() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            if (w <= 480) {
+                // 小手机
+                return {
+                    margin: 18,
+                    minDistBetweenWords: 48,
+                    minDistFromCenter: 90,
+                    maxAttempts: 300,
+                };
+            } else if (w <= 768) {
+                // 手机
+                return {
+                    margin: 25,
+                    minDistBetweenWords: 58,
+                    minDistFromCenter: 110,
+                    maxAttempts: 280,
+                };
+            } else if (w <= 1024) {
+                // 平板
+                return {
+                    margin: 35,
+                    minDistBetweenWords: 72,
+                    minDistFromCenter: 150,
+                    maxAttempts: 250,
+                };
+            } else {
+                // 桌面
+                return {
+                    margin: 42,
+                    minDistBetweenWords: 88,
+                    minDistFromCenter: 190,
+                    maxAttempts: 220,
+                };
+            }
+        }
+
+        function initWords() {
+            const params = getAdaptiveParams();
+            const centerX = window.innerWidth * 0.32; // 中心文字偏左，在32%处
+            const centerY = window.innerHeight / 2;
+            const { margin, minDistBetweenWords, minDistFromCenter, maxAttempts } = params;
+
+            // 先清空容器（以防重复调用）
+            container.innerHTML = '';
+            positions.length = 0;
+
+            // 记录中心文字位置，作为碰撞检测的参考
+            positions.push({
+                x: centerX,
+                y: centerY,
+                isCenter: true,
+                minDist: minDistFromCenter,
+            });
+
+            words.forEach((word, index) => {
+                const div = document.createElement('div');
+                div.className = 'word';
+                div.textContent = word;
+                container.appendChild(div);
+
+                let validPosition = false;
+                let x, y, attempts = 0;
+
+                // 尝试找到不重叠的位置
+                while (!validPosition && attempts < maxAttempts) {
+                    // ---- 全屏均匀分布，x坐标偏左 ----
+                    // 使用 Math.random() ** 1.35 让x分布偏向左侧（值偏小）
+                    const xRatio = Math.random() ** 1.35;
+                    const yRatio = Math.random();
+
+                    x = margin + xRatio * (window.innerWidth - margin * 2);
+                    y = margin + yRatio * (window.innerHeight - margin * 2);
+
+                    // 边界安全检查
+                    if (x < margin || x > window.innerWidth - margin ||
+                        y < margin || y > window.innerHeight - margin) {
+                        attempts++;
+                        continue;
+                    }
+
+                    // 碰撞检测：检查与所有已放置文字的距离
+                    let tooClose = false;
+                    for (const pos of positions) {
+                        const requiredDist = pos.isCenter ? pos.minDist : minDistBetweenWords;
+                        const dist = Math.hypot(x - pos.x, y - pos.y);
+                        if (dist < requiredDist) {
+                            tooClose = true;
+                            break;
+                        }
+                    }
+
+                    if (!tooClose) {
+                        validPosition = true;
+                        positions.push({ x, y, isCenter: false, minDist: minDistBetweenWords });
+                    }
+                    attempts++;
+                }
+
+                // 如果实在找不到位置（极小屏幕），放宽限制强制放置
+                if (!validPosition) {
+                    // 使用最后一次生成的位置，但不再做严格碰撞检测
+                    // 至少保证在屏幕内
+                    x = Math.max(margin, Math.min(window.innerWidth - margin, x));
+                    y = Math.max(margin, Math.min(window.innerHeight - margin, y));
+                    positions.push({ x, y, isCenter: false, minDist: minDistBetweenWords * 0.6 });
+                }
+
+                // 设置最终位置
+                div.style.left = `${x}px`;
+                div.style.top = `${y}px`;
+
+                // 随机漂浮参数，让每个文字的动画节奏不一样
+                const duration = 3 + Math.random() * 3;
+                const delay = Math.random() * 2.5;
+                div.style.animationDuration = `${duration}s`;
+                div.style.animationDelay = `${delay}s`;
+
+                // 逐个显示文字，营造渐次出现的浪漫感
+                setTimeout(() => {
+                    div.classList.add('show');
+                }, index * 80);
+            });
+        }
+
+        // 页面加载完成后执行
+        window.onload = () => {
+            // 先显示中心文字
+            centerText.style.opacity = '1';
+            // 延迟加载周围文字，让中心文字先被注意到
+            setTimeout(initWords, 600);
+        };
+
+        // 窗口大小变化时重新布局（防抖处理）
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                // 重新计算中心文字位置
+                centerText.style.opacity = '0';
+                // 隐藏所有周围文字
+                const allWords = container.querySelectorAll('.word');
+                allWords.forEach(w => w.classList.remove('show'));
+
+                // 短暂延迟后重新初始化
+                setTimeout(() => {
+                    centerText.style.opacity = '1';
+                    setTimeout(initWords, 600);
+                }, 300);
+            }, 400);
+        });
+    </script>
 </body>
 </html>
