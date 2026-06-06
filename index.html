@@ -2,11 +2,24 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <!-- 强制横屏适配，禁止缩放 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="screen-orientation" content="landscape">
-  <meta name="x5-orientation" content="landscape">
-  <meta name="360-orientation" content="landscape">
+  <!-- iOS 核心适配：禁止缩放、适配视口、全屏、强制横屏 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- 强制页面横屏（兼容苹果/安卓所有浏览器） -->
+  <style>
+    @media screen and (orientation: portrait) {
+      body {
+        transform: rotate(90deg);
+        transform-origin: center center;
+        width: 100vh;
+        height: 100vw;
+        position: fixed;
+        top: 0;
+        left: 0;
+      }
+    }
+  </style>
   <title>喜欢徐依晨的全部</title>
   <style>
     * {
@@ -14,50 +27,46 @@
       padding: 0;
       box-sizing: border-box;
     }
-    body {
+    html, body {
       background: #000;
       color: #fff;
-      font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", sans-serif;
+      font-family: "KaiTi", "STKaiti", sans-serif;
       overflow: hidden;
       width: 100vw;
       height: 100vh;
       position: relative;
     }
-    /* 中心文字（横屏适配） */
+    /* 中心主文字 */
     .center-text {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: clamp(24px, 4vw, 36px);
-      font-weight: normal;
+      font-size: 28px;
       font-style: italic;
       opacity: 0;
       transition: opacity 0.8s ease;
-      z-index: 10;
+      z-index: 99;
       white-space: nowrap;
     }
-    /* 周围文字（横屏适配） */
+    /* 环绕小字 - 基础样式 */
     .word {
       position: absolute;
-      font-size: clamp(14px, 2.8vw, 20px);
+      font-size: 16px;
       opacity: 0;
       transition: opacity 0.8s ease;
       font-style: italic;
       white-space: nowrap;
+      /* 漂浮动画 */
       animation: float 4s ease-in-out infinite alternate;
     }
     .word.show {
       opacity: 1;
     }
-    /* 缓慢漂浮动画 */
+    /* 缓慢漂浮 */
     @keyframes float {
-      0% {
-        transform: translate(0, 0);
-      }
-      100% {
-        transform: translate(6px, -6px);
-      }
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(5px, -5px); }
     }
   </style>
 </head>
@@ -67,92 +76,90 @@
 
   <script>
     const words = [
-      "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛", 
-      "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽", 
-      "徐依晨的声音", "徐依晨的开朗", "徐依晨的不堪", "徐依晨的优点", "徐依晨的腼腆", 
-      "徐依晨的窘迫", "徐依晨的脆弱", "徐依晨的生气", "徐依晨的底线", "徐依晨的古板", 
-      "徐依晨的家人", "徐依晨的人格", "徐依晨的家乡", "徐依晨的三观", "徐依晨的嗜好", 
-      "徐依晨的灵动", "徐依晨的善良", "徐依晨的经历", "徐依晨的生日", "徐依晨的浪漫", 
-      "徐依晨的不甘", "徐依晨的固执", "徐依晨的朋友", "徐依晨的尊严", "徐依晨的天真", 
+      "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛",
+      "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽",
+      "徐依晨的声音", "徐依晨的开朗", "徐依晨的不堪", "徐依晨的优点", "徐依晨的腼腆",
+      "徐依晨的窘迫", "徐依晨的脆弱", "徐依晨的生气", "徐依晨的底线", "徐依晨的古板",
+      "徐依晨的家人", "徐依晨的人格", "徐依晨的家乡", "徐依晨的三观", "徐依晨的嗜好",
+      "徐依晨的灵动", "徐依晨的善良", "徐依晨的经历", "徐依晨的生日", "徐依晨的浪漫",
+      "徐依晨的不甘", "徐依晨的固执", "徐依晨的朋友", "徐依晨的尊严", "徐依晨的天真",
       "徐依晨的美好", "徐依晨的血型"
     ];
 
     const container = document.getElementById('wordsContainer');
     const centerText = document.getElementById('centerText');
-    let positions = [];
+    let usedPos = [];
 
-    function initWords() {
-      positions = [];
-      container.innerHTML = '';
+    // 初始化文字布局（高容错、强防重叠）
+    function createWords() {
+      usedPos = [];
+      container.innerHTML = "";
 
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      // 横屏专属参数
-      const minDistFromCenter = 160;
-      const minDistBetweenWords = 90;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const cx = w / 2;
+      const cy = h / 2;
 
-      words.forEach((word, index) => {
-        const div = document.createElement('div');
-        div.className = 'word';
-        div.textContent = word;
-        container.appendChild(div);
+      // 距离中心最小距离 + 文字之间安全距离（彻底解决堆叠）
+      const safeRadius = 170;
+      const gap = 100;
 
-        let validPosition = false;
-        let x, y, attempts = 0;
+      words.forEach((item, idx) => {
+        const el = document.createElement('div');
+        el.className = "word";
+        el.innerText = item;
+        container.appendChild(el);
 
-        while (!validPosition && attempts < 200) {
-          // 极坐标分布，适配横屏宽高比
-          const angle = Math.random() * 2 * Math.PI;
-          const radius = minDistFromCenter + Math.random() * Math.min(window.innerWidth, window.innerHeight) / 2.5;
-          x = centerX + Math.cos(angle) * radius;
-          y = centerY + Math.sin(angle) * radius;
+        let x, y, tryTimes = 0;
+        // 循环寻找合法位置，最多尝试300次，保证一定不重叠
+        while (tryTimes < 300) {
+          const angle = Math.random() * Math.PI * 2;
+          const r = safeRadius + Math.random() * 220;
+          x = cx + Math.cos(angle) * r;
+          y = cy + Math.sin(angle) * r;
 
-          // 横屏边界保护，避免文字跑出屏幕
-          if (x < 40 || x > window.innerWidth - 40 || y < 40 || y > window.innerHeight - 40) {
-            attempts++;
+          // 边界限制：不让文字跑出屏幕
+          if (x < 50 || x > w - 50 || y < 50 || y > h - 50) {
+            tryTimes++;
             continue;
           }
 
-          // 防重叠检测
-          let tooClose = false;
-          for (const pos of positions) {
-            const dist = Math.hypot(x - pos.x, y - pos.y);
-            if (dist < minDistBetweenWords) {
-              tooClose = true;
+          // 检测和已有文字是否重叠
+          let overlap = false;
+          for (let p of usedPos) {
+            const dist = Math.hypot(x - p.x, y - p.y);
+            if (dist < gap) {
+              overlap = true;
               break;
             }
           }
 
-          if (!tooClose) {
-            validPosition = true;
-            positions.push({ x, y });
-          }
-          attempts++;
+          if (!overlap) break;
+          tryTimes++;
         }
 
-        div.style.left = `${x}px`;
-        div.style.top = `${y}px`;
+        usedPos.push({ x, y });
+        el.style.left = x + "px";
+        el.style.top = y + "px";
 
-        // 随机动画节奏
-        const duration = 3 + Math.random() * 2;
-        const delay = Math.random() * 2;
-        div.style.animationDuration = `${duration}s`;
-        div.style.animationDelay = `${delay}s`;
+        // 随机动画，漂浮更自然
+        el.style.animationDuration = (3 + Math.random() * 2) + "s";
+        el.style.animationDelay = Math.random() + "s";
 
-        setTimeout(() => {
-          div.classList.add('show');
-        }, index * 100);
+        setTimeout(() => el.classList.add("show"), idx * 80);
       });
     }
 
-    // 页面加载初始化
-    window.onload = () => {
-      centerText.style.opacity = '1';
-      setTimeout(initWords, 500);
-    };
+    // 页面加载完成执行
+    window.addEventListener("load", () => {
+      centerText.style.opacity = "1";
+      setTimeout(createWords, 400);
+    });
 
-    // 横竖屏切换时自动重排
-    window.addEventListener('resize', initWords);
+    // 屏幕旋转/尺寸变化 自动重排（苹果手机必备）
+    window.addEventListener("resize", () => {
+      setTimeout(createWords, 200);
+    });
   </script>
 </body>
 </html>
