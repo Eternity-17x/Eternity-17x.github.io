@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>喜欢徐依晨的全部</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    /* 中心文字样式（适配横屏） */
+    .center-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(20px, 4vw, 32px);
+      font-weight: normal;
+      font-style: italic;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+      z-index: 10;
+      white-space: nowrap;
+    }
+    /* 周围文字样式（适配横屏） */
+    .word {
+      position: absolute;
+      font-size: clamp(12px, 3vw, 18px);
+      opacity: 0;
+      transition: opacity 0.8s ease;
+      font-style: italic;
+      white-space: nowrap;
+      animation: float 4s ease-in-out infinite alternate;
+    }
+    .word.show {
+      opacity: 1;
+    }
+    /* 缓慢漂浮动画 */
+    @keyframes float {
+      0% {
+        transform: translate(0, 0);
+      }
+      100% {
+        transform: translate(6px, -6px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="center-text" id="centerText">我会喜欢徐依晨的全部</div>
+  <div id="wordsContainer"></div>
+
+  <script>
+    const words = [
+      "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛", 
+      "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽", 
+      "徐依晨的声音", "徐依晨的开朗", "徐依晨的不堪", "徐依晨的优点", "徐依晨的腼腆", 
+      "徐依晨的窘迫", "徐依晨的脆弱", "徐依晨的生气", "徐依晨的底线", "徐依晨的古板", 
+      "徐依晨的家人", "徐依晨的人格", "徐依晨的家乡", "徐依晨的三观", "徐依晨的嗜好", 
+      "徐依晨的灵动", "徐依晨的善良", "徐依晨的经历", "徐依晨的生日", "徐依晨的浪漫", 
+      "徐依晨的不甘", "徐依晨的固执", "徐依晨的朋友", "徐依晨的尊严", "徐依晨的天真", 
+      "徐依晨的美好", "徐依晨的血型"
+    ];
+
+    const container = document.getElementById('wordsContainer');
+    const centerText = document.getElementById('centerText');
+    const positions = [];
+
+    function initWords() {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const minDistFromCenter = 160;   // 横屏适配的中心距离
+      const minDistBetweenWords = 90;  // 横屏适配的防重叠距离
+
+      words.forEach((word, index) => {
+        const div = document.createElement('div');
+        div.className = 'word';
+        div.textContent = word;
+        container.appendChild(div);
+
+        let validPosition = false;
+        let x, y, attempts = 0;
+
+        while (!validPosition && attempts < 150) {
+          // 横屏优化：极坐标分布，适配宽屏比例
+          const angle = Math.random() * 2 * Math.PI;
+          const radius = minDistFromCenter + Math.random() * Math.min(window.innerWidth, window.innerHeight) / 2.5;
+          x = centerX + Math.cos(angle) * radius;
+          y = centerY + Math.sin(angle) * radius;
+
+          // 横屏边界检查，避免文字跑出屏幕
+          if (x < 40 || x > window.innerWidth - 40 || y < 40 || y > window.innerHeight - 40) {
+            attempts++;
+            continue;
+          }
+
+          // 防重叠检测
+          let tooClose = false;
+          for (const pos of positions) {
+            const dist = Math.hypot(x - pos.x, y - pos.y);
+            if (dist < minDistBetweenWords) {
+              tooClose = true;
+              break;
+            }
+          }
+
+          if (!tooClose) {
+            validPosition = true;
+            positions.push({ x, y });
+          }
+          attempts++;
+        }
+
+        div.style.left = `${x}px`;
+        div.style.top = `${y}px`;
+
+        // 随机动画节奏，让漂浮更自然
+        const duration = 3 + Math.random() * 2;
+        const delay = Math.random() * 2;
+        div.style.animationDuration = `${duration}s`;
+        div.style.animationDelay = `${delay}s`;
+
+        setTimeout(() => {
+          div.classList.add('show');
+        }, index * 100);
+      });
+    }
+
+    // 监听窗口大小变化，自动重新布局（适配旋转/横屏）
+    function updateLayout() {
+      positions.length = 0;
+      container.innerHTML = '';
+      initWords();
+    }
+
+    // 页面加载完成后初始化
+    window.onload = () => {
+      centerText.style.opacity = '1';
+      setTimeout(initWords, 500);
+    };
+
+    // 监听窗口尺寸变化（手机横竖屏切换时自动重排）
+    window.addEventListener('resize', updateLayout);
+  </script>
+</body>
+</html>
