@@ -1,306 +1,377 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>喜欢徐依晨的全部</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #000;
-            color: #fff;
-            font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", sans-serif;
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>喜欢徐依晨的全部</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        /* 中心文字样式 - 偏左放置 */
-        .center-text {
-            position: absolute;
-            top: 50%;
-            left: 32%;
-            transform: translate(-50%, -50%);
-            font-size: 48px;
-            font-weight: normal;
-            font-style: italic;
-            opacity: 0;
-            transition: opacity 1s ease;
-            z-index: 10;
-            text-shadow: 0 0 30px rgba(255, 255, 255, 0.5), 0 0 60px rgba(255, 255, 255, 0.25);
-            white-space: nowrap;
-            pointer-events: none;
-            animation: centerGlow 3s ease-in-out infinite alternate;
-        }
+    body {
+      background: #0a0a0a;
+      color: #f0e6d2;
+      font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", "PingFang SC", "Noto Serif SC", serif;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
 
-        @keyframes centerGlow {
-            0% {
-                text-shadow: 0 0 20px rgba(255, 255, 255, 0.4), 0 0 50px rgba(255, 255, 255, 0.2);
-            }
-            100% {
-                text-shadow: 0 0 40px rgba(255, 255, 255, 0.7), 0 0 80px rgba(255, 255, 255, 0.35);
-            }
-        }
+    /* 中心文字 - 绝对居中，使用更大字体 */
+    .center-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 400;
+      font-style: italic;
+      white-space: nowrap;
+      z-index: 20;
+      opacity: 0;
+      transition: opacity 1.2s ease;
+      text-shadow: 0 0 25px rgba(255, 240, 200, 0.5), 0 0 60px rgba(255, 210, 150, 0.3);
+      letter-spacing: 2px;
+      pointer-events: none;
+      animation: softGlow 3s ease-in-out infinite alternate;
+    }
 
-        /* 周围文字样式 */
-        .word {
-            position: absolute;
-            font-size: 26px;
-            opacity: 0;
-            transition: opacity 0.8s ease;
-            font-style: italic;
-            white-space: nowrap;
-            pointer-events: none;
-            animation: float 4s ease-in-out infinite alternate;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
-        }
-        .word.show {
-            opacity: 1;
-        }
+    @keyframes softGlow {
+      0% {
+        text-shadow: 0 0 20px rgba(255, 240, 200, 0.45), 0 0 50px rgba(255, 210, 150, 0.25);
+      }
+      100% {
+        text-shadow: 0 0 35px rgba(255, 240, 200, 0.7), 0 0 75px rgba(255, 210, 150, 0.4);
+      }
+    }
 
-        /* 缓慢漂浮动画 - 幅度稍大 */
-        @keyframes float {
-            0% {
-                transform: translate(0, 0);
-            }
-            100% {
-                transform: translate(9px, -9px);
-            }
-        }
+    /* 周围文字样式 - 字体更大，不会堆叠 */
+    .word {
+      position: absolute;
+      font-size: clamp(18px, 2.8vw, 30px);
+      font-style: italic;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 1s ease;
+      z-index: 5;
+      pointer-events: none;
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.25);
+      animation: gentleFloat 5s ease-in-out infinite alternate;
+      transform-origin: center center;
+      font-weight: 350;
+      color: #e8d9c0;
+    }
 
-        /* ========== 响应式：平板 ========== */
-        @media (max-width: 1024px) {
-            .center-text {
-                font-size: 38px;
-                left: 33%;
-            }
-            .word {
-                font-size: 22px;
-            }
-            @keyframes float {
-                0% {
-                    transform: translate(0, 0);
-                }
-                100% {
-                    transform: translate(7px, -7px);
-                }
-            }
-        }
+    .word.show {
+      opacity: 1;
+    }
 
-        /* ========== 响应式：手机 ========== */
-        @media (max-width: 768px) {
-            .center-text {
-                font-size: 28px;
-                left: 34%;
-            }
-            .word {
-                font-size: 18px;
-            }
-            @keyframes float {
-                0% {
-                    transform: translate(0, 0);
-                }
-                100% {
-                    transform: translate(5px, -5px);
-                }
-            }
-        }
+    @keyframes gentleFloat {
+      0% {
+        transform: translate(0, 0);
+      }
+      100% {
+        transform: translate(10px, -10px);
+      }
+    }
 
-        /* ========== 响应式：小手机 ========== */
-        @media (max-width: 480px) {
-            .center-text {
-                font-size: 24px;
-                left: 35%;
-            }
-            .word {
-                font-size: 16px;
-            }
-            @keyframes float {
-                0% {
-                    transform: translate(0, 0);
-                }
-                100% {
-                    transform: translate(4px, -4px);
-                }
-            }
-        }
-    </style>
+    /* 极简装饰：中心微光背景（可选） */
+    .center-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(255, 220, 180, 0.08) 0%, transparent 70%);
+      border-radius: 50%;
+      z-index: 1;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
-    <div class="center-text" id="centerText">我会喜欢徐依晨的全部</div>
-    <div id="wordsContainer"></div>
+  <div class="center-glow"></div>
+  <div class="center-text" id="centerText">我会喜欢徐依晨的全部</div>
+  <div id="wordsContainer"></div>
 
-    <script>
-        // 所有文字内容
-        const words = [
-            "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛",
-            "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽",
-            "徐依晨的声音", "徐依晨的开朗", "徐依晨的不堪", "徐依晨的优点", "徐依晨的腼腆",
-            "徐依晨的窘迫", "徐依晨的脆弱", "徐依晨的生气", "徐依晨的底线", "徐依晨的古板",
-            "徐依晨的家人", "徐依晨的人格", "徐依晨的家乡", "徐依晨的三观", "徐依晨的嗜好",
-            "徐依晨的灵动", "徐依晨的善良", "徐依晨的经历", "徐依晨的生日", "徐依晨的浪漫",
-            "徐依晨的不甘", "徐依晨的固执", "徐依晨的朋友", "徐依晨的尊严", "徐依晨的天真",
-            "徐依晨的美好", "徐依晨的血型"
+  <script>
+    (function() {
+      // 所有文字内容（36个短语）
+      const words = [
+        "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛",
+        "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽",
+        "徐依晨的声音", "徐依晨的开朗", "徐依晨的不堪", "徐依晨的优点", "徐依晨的腼腆",
+        "徐依晨的窘迫", "徐依晨的脆弱", "徐依晨的生气", "徐依晨的底线", "徐依晨的古板",
+        "徐依晨的家人", "徐依晨的人格", "徐依晨的家乡", "徐依晨的三观", "徐依晨的嗜好",
+        "徐依晨的灵动", "徐依晨的善良", "徐依晨的经历", "徐依晨的生日", "徐依晨的浪漫",
+        "徐依晨的不甘", "徐依晨的固执", "徐依晨的朋友", "徐依晨的尊严", "徐依晨的天真",
+        "徐依晨的美好", "徐依晨的血型"
+      ];
+
+      const container = document.getElementById('wordsContainer');
+      const centerTextEl = document.getElementById('centerText');
+      
+      // 存储已放置文字的位置信息
+      let placedPositions = [];
+      
+      // 屏幕尺寸相关变量
+      let screenWidth = window.innerWidth;
+      let screenHeight = window.innerHeight;
+      
+      // 中心点坐标
+      let centerX = screenWidth / 2;
+      let centerY = screenHeight / 2;
+
+      // ----- 自适应参数：根据屏幕宽度调整间距与字体大小 -----
+      function getLayoutParams() {
+        const w = screenWidth;
+        // 基础字体大小（word元素通过clamp动态调整，这里主要控制间距）
+        if (w < 480) {
+          return {
+            minDistFromCenter: 95,      // 中心保护半径（手机）
+            minDistBetweenWords: 58,    // 文字之间最小距离
+            edgePadding: 24,            // 屏幕边缘内边距
+            maxAttempts: 350,
+            angleStepBase: 0.18,        // 角度步长基数（用于均匀分布）
+          };
+        } else if (w < 768) {
+          return {
+            minDistFromCenter: 130,
+            minDistBetweenWords: 70,
+            edgePadding: 32,
+            maxAttempts: 300,
+            angleStepBase: 0.16,
+          };
+        } else if (w < 1024) {
+          return {
+            minDistFromCenter: 170,
+            minDistBetweenWords: 85,
+            edgePadding: 45,
+            maxAttempts: 250,
+            angleStepBase: 0.14,
+          };
+        } else {
+          // 桌面大屏
+          return {
+            minDistFromCenter: 210,
+            minDistBetweenWords: 100,
+            edgePadding: 55,
+            maxAttempts: 200,
+            angleStepBase: 0.12,
+          };
+        }
+      }
+
+      // ----- 检查两个位置是否重叠或过于靠近 -----
+      function isTooClose(x, y, existingPositions, minDistBetween, centerDistCheck = null) {
+        for (let pos of existingPositions) {
+          // 如果是中心参考点，使用中心保护距离
+          const requiredDist = pos.isCenter ? (centerDistCheck || pos.minDist) : minDistBetween;
+          const dx = x - pos.x;
+          const dy = y - pos.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < requiredDist) {
+            return true; // 太近了
+          }
+        }
+        return false;
+      }
+
+      // ----- 生成均匀分布且不重叠的周围文字位置 -----
+      function generateUniformPositions(wordCount, params) {
+        const positions = [];
+        const {
+          minDistFromCenter,
+          minDistBetweenWords,
+          edgePadding,
+          maxAttempts,
+          angleStepBase
+        } = params;
+
+        // 首先将中心点加入已放置列表，避免文字侵入中心区域
+        const occupied = [
+          { x: centerX, y: centerY, isCenter: true, minDist: minDistFromCenter }
         ];
 
-        const container = document.getElementById('wordsContainer');
-        const centerText = document.getElementById('centerText');
-        const positions = []; // 记录已放置文字的位置，避免重叠
+        // 计算可用半径范围
+        const maxRadiusX = screenWidth / 2 - edgePadding;
+        const maxRadiusY = screenHeight / 2 - edgePadding;
+        // 使用较小的半径保证在椭圆屏幕内都安全
+        const safeMaxRadius = Math.min(maxRadiusX, maxRadiusY) * 0.92;
+        const minRadius = minDistFromCenter * 1.05; // 起始半径稍大于保护距离
 
-        function getAdaptiveParams() {
-            const w = window.innerWidth;
-            const h = window.innerHeight;
+        // 为了更均匀，我们采用螺旋线 + 随机微调的方式
+        // 首先基于角度步长生成候选角度序列
+        const angleStep = (Math.PI * 2) / wordCount * 1.3; // 稍微拉开角度间距
+        let currentAngle = Math.random() * Math.PI * 2; // 随机起始角度
 
-            if (w <= 480) {
-                // 小手机
-                return {
-                    margin: 18,
-                    minDistBetweenWords: 48,
-                    minDistFromCenter: 90,
-                    maxAttempts: 300,
-                };
-            } else if (w <= 768) {
-                // 手机
-                return {
-                    margin: 25,
-                    minDistBetweenWords: 58,
-                    minDistFromCenter: 110,
-                    maxAttempts: 280,
-                };
-            } else if (w <= 1024) {
-                // 平板
-                return {
-                    margin: 35,
-                    minDistBetweenWords: 72,
-                    minDistFromCenter: 150,
-                    maxAttempts: 250,
-                };
-            } else {
-                // 桌面
-                return {
-                    margin: 42,
-                    minDistBetweenWords: 88,
-                    minDistFromCenter: 190,
-                    maxAttempts: 220,
-                };
+        for (let i = 0; i < wordCount; i++) {
+          let placed = false;
+          let finalX = 0, finalY = 0;
+          
+          // 尝试不同半径和角度组合
+          for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            // 基础角度：均匀分布 + 随机扰动（±0.25弧度）
+            const baseAngle = (currentAngle + i * angleStep) % (Math.PI * 2);
+            const angleOffset = (Math.random() - 0.5) * 0.5;
+            const angle = baseAngle + angleOffset;
+            
+            // 半径：在最小半径和最大半径之间随机，并加入一些变化
+            const radiusRandomFactor = 0.75 + Math.random() * 0.45; // 0.75~1.2 之间变化
+            let radius = minRadius + (safeMaxRadius - minRadius) * Math.random() * radiusRandomFactor;
+            // 确保半径不超过安全范围
+            radius = Math.min(radius, safeMaxRadius * 0.98);
+            
+            // 计算笛卡尔坐标
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * radius;
+            
+            // 边界检查
+            if (x < edgePadding || x > screenWidth - edgePadding ||
+                y < edgePadding || y > screenHeight - edgePadding) {
+              continue;
             }
+            
+            // 重叠检查（与已放置文字以及中心点）
+            if (!isTooClose(x, y, occupied, minDistBetweenWords, minDistFromCenter)) {
+              // 位置有效
+              finalX = x;
+              finalY = y;
+              placed = true;
+              break;
+            }
+          }
+          
+          // 如果经过多次尝试仍未找到位置，使用宽松策略：仅确保在屏幕内且不重叠中心
+          if (!placed) {
+            // 最终回退：使用更均匀的螺旋分布，强制计算
+            const fallbackAngle = (i / wordCount) * Math.PI * 2 + 0.2;
+            const fallbackRadius = minRadius + (safeMaxRadius - minRadius) * 0.7;
+            let fallbackX = centerX + Math.cos(fallbackAngle) * fallbackRadius;
+            let fallbackY = centerY + Math.sin(fallbackAngle) * fallbackRadius;
+            
+            // 边界约束
+            fallbackX = Math.min(Math.max(fallbackX, edgePadding), screenWidth - edgePadding);
+            fallbackY = Math.min(Math.max(fallbackY, edgePadding), screenHeight - edgePadding);
+            
+            // 最后再检查一次与中心距离，如果太近则向外推
+            const distToCenter = Math.hypot(fallbackX - centerX, fallbackY - centerY);
+            if (distToCenter < minDistFromCenter * 0.9) {
+              const angleToCenter = Math.atan2(fallbackY - centerY, fallbackX - centerX);
+              fallbackX = centerX + Math.cos(angleToCenter) * minDistFromCenter * 1.1;
+              fallbackY = centerY + Math.sin(angleToCenter) * minDistFromCenter * 1.1;
+            }
+            
+            finalX = fallbackX;
+            finalY = fallbackY;
+          }
+          
+          // 记录位置
+          positions.push({ x: finalX, y: finalY });
+          occupied.push({ x: finalX, y: finalY, isCenter: false, minDist: minDistBetweenWords });
         }
+        
+        return positions;
+      }
 
-        function initWords() {
-            const params = getAdaptiveParams();
-            const centerX = window.innerWidth * 0.32; // 中心文字偏左，在32%处
-            const centerY = window.innerHeight / 2;
-            const { margin, minDistBetweenWords, minDistFromCenter, maxAttempts } = params;
-
-            // 先清空容器（以防重复调用）
-            container.innerHTML = '';
-            positions.length = 0;
-
-            // 记录中心文字位置，作为碰撞检测的参考
-            positions.push({
-                x: centerX,
-                y: centerY,
-                isCenter: true,
-                minDist: minDistFromCenter,
-            });
-
-            words.forEach((word, index) => {
-                const div = document.createElement('div');
-                div.className = 'word';
-                div.textContent = word;
-                container.appendChild(div);
-
-                let validPosition = false;
-                let x, y, attempts = 0;
-
-                // 尝试找到不重叠的位置
-                while (!validPosition && attempts < maxAttempts) {
-                    // ---- 全屏均匀分布，x坐标偏左 ----
-                    // 使用 Math.random() ** 1.35 让x分布偏向左侧（值偏小）
-                    const xRatio = Math.random() ** 1.35;
-                    const yRatio = Math.random();
-
-                    x = margin + xRatio * (window.innerWidth - margin * 2);
-                    y = margin + yRatio * (window.innerHeight - margin * 2);
-
-                    // 边界安全检查
-                    if (x < margin || x > window.innerWidth - margin ||
-                        y < margin || y > window.innerHeight - margin) {
-                        attempts++;
-                        continue;
-                    }
-
-                    // 碰撞检测：检查与所有已放置文字的距离
-                    let tooClose = false;
-                    for (const pos of positions) {
-                        const requiredDist = pos.isCenter ? pos.minDist : minDistBetweenWords;
-                        const dist = Math.hypot(x - pos.x, y - pos.y);
-                        if (dist < requiredDist) {
-                            tooClose = true;
-                            break;
-                        }
-                    }
-
-                    if (!tooClose) {
-                        validPosition = true;
-                        positions.push({ x, y, isCenter: false, minDist: minDistBetweenWords });
-                    }
-                    attempts++;
-                }
-
-                // 如果实在找不到位置（极小屏幕），放宽限制强制放置
-                if (!validPosition) {
-                    // 使用最后一次生成的位置，但不再做严格碰撞检测
-                    // 至少保证在屏幕内
-                    x = Math.max(margin, Math.min(window.innerWidth - margin, x));
-                    y = Math.max(margin, Math.min(window.innerHeight - margin, y));
-                    positions.push({ x, y, isCenter: false, minDist: minDistBetweenWords * 0.6 });
-                }
-
-                // 设置最终位置
-                div.style.left = `${x}px`;
-                div.style.top = `${y}px`;
-
-                // 随机漂浮参数，让每个文字的动画节奏不一样
-                const duration = 3 + Math.random() * 3;
-                const delay = Math.random() * 2.5;
-                div.style.animationDuration = `${duration}s`;
-                div.style.animationDelay = `${delay}s`;
-
-                // 逐个显示文字，营造渐次出现的浪漫感
-                setTimeout(() => {
-                    div.classList.add('show');
-                }, index * 80);
-            });
-        }
-
-        // 页面加载完成后执行
-        window.onload = () => {
-            // 先显示中心文字
-            centerText.style.opacity = '1';
-            // 延迟加载周围文字，让中心文字先被注意到
-            setTimeout(initWords, 600);
-        };
-
-        // 窗口大小变化时重新布局（防抖处理）
-        let resizeTimeout;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                // 重新计算中心文字位置
-                centerText.style.opacity = '0';
-                // 隐藏所有周围文字
-                const allWords = container.querySelectorAll('.word');
-                allWords.forEach(w => w.classList.remove('show'));
-
-                // 短暂延迟后重新初始化
-                setTimeout(() => {
-                    centerText.style.opacity = '1';
-                    setTimeout(initWords, 600);
-                }, 300);
-            }, 400);
+      // ----- 渲染所有周围文字到页面 -----
+      function renderWords(positionsArray) {
+        // 清空容器
+        container.innerHTML = '';
+        
+        // 创建文档片段提升性能
+        const fragment = document.createDocumentFragment();
+        
+        words.forEach((word, index) => {
+          const pos = positionsArray[index];
+          if (!pos) return;
+          
+          const div = document.createElement('div');
+          div.className = 'word';
+          div.textContent = word;
+          div.style.left = `${pos.x}px`;
+          div.style.top = `${pos.y}px`;
+          
+          // 随机漂浮动画参数，增加变化
+          const duration = 4.5 + Math.random() * 4;
+          const delay = Math.random() * 3;
+          div.style.animationDuration = `${duration}s`;
+          div.style.animationDelay = `${delay}s`;
+          
+          fragment.appendChild(div);
         });
-    </script>
+        
+        container.appendChild(fragment);
+        
+        // 依次显示文字，营造渐现效果
+        const wordElements = container.querySelectorAll('.word');
+        wordElements.forEach((el, idx) => {
+          setTimeout(() => {
+            el.classList.add('show');
+          }, idx * 70 + 150); // 稍微延迟，中心文字先亮起
+        });
+      }
+
+      // ----- 主初始化函数 -----
+      function initializeLayout() {
+        // 更新屏幕尺寸和中心点
+        screenWidth = window.innerWidth;
+        screenHeight = window.innerHeight;
+        centerX = screenWidth / 2;
+        centerY = screenHeight / 2;
+        
+        // 获取当前自适应参数
+        const params = getLayoutParams();
+        
+        // 生成均匀且不重叠的位置
+        const wordPositions = generateUniformPositions(words.length, params);
+        
+        // 渲染文字
+        renderWords(wordPositions);
+        
+        // 确保中心文字可见
+        centerTextEl.style.opacity = '1';
+      }
+
+      // ----- 窗口大小改变时重新布局（防抖）-----
+      let resizeTimer;
+      function handleResize() {
+        clearTimeout(resizeTimer);
+        // 先隐藏周围文字和中心文字
+        const allWords = container.querySelectorAll('.word');
+        allWords.forEach(el => el.classList.remove('show'));
+        centerTextEl.style.opacity = '0';
+        
+        resizeTimer = setTimeout(() => {
+          // 重新计算并渲染
+          initializeLayout();
+        }, 350);
+      }
+
+      // 页面加载完成后启动
+      window.addEventListener('load', () => {
+        // 初始时中心文字隐藏，通过initializeLayout显示
+        centerTextEl.style.opacity = '0';
+        // 短暂延迟后开始布局，让页面先稳定
+        setTimeout(() => {
+          initializeLayout();
+        }, 100);
+      });
+
+      // 监听窗口大小变化
+      window.addEventListener('resize', handleResize);
+      
+      // 可选：移动端屏幕旋转时也重新布局
+      window.addEventListener('orientationchange', () => {
+        setTimeout(handleResize, 200);
+      });
+
+    })();
+  </script>
 </body>
 </html>
