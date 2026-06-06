@@ -13,6 +13,7 @@
       font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", sans-serif;
       overflow: hidden;
     }
+    /* 中心文字样式 */
     .center-text {
       position: absolute;
       top: 50%;
@@ -23,7 +24,9 @@
       font-style: italic;
       opacity: 0;
       transition: opacity 0.8s ease;
+      z-index: 10; /* 保证中心文字在最上层 */
     }
+    /* 周围文字样式 */
     .word {
       position: absolute;
       font-size: 20px;
@@ -31,18 +34,18 @@
       transition: opacity 0.8s ease;
       font-style: italic;
       white-space: nowrap;
-      /* 缓慢漂浮动画 */
       animation: float 4s ease-in-out infinite alternate;
     }
     .word.show {
       opacity: 1;
     }
+    /* 缓慢漂浮动画 */
     @keyframes float {
       0% {
         transform: translate(0, 0);
       }
       100% {
-        transform: translate(8px, -8px);
+        transform: translate(6px, -6px);
       }
     }
   </style>
@@ -52,6 +55,7 @@
   <div id="wordsContainer"></div>
 
   <script>
+    // 所有文字内容
     const words = [
       "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛", 
       "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽", 
@@ -65,13 +69,13 @@
 
     const container = document.getElementById('wordsContainer');
     const centerText = document.getElementById('centerText');
-    const positions = []; // 用来记录已经放好的文字位置，避免重叠
+    const positions = []; // 记录已放置的文字位置，避免重叠
 
     function initWords() {
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
-      const minDistFromCenter = 200;  // 避开中心文字的最小距离
-      const minDistBetweenWords = 100; // 文字之间的最小距离，防止堆叠
+      const minDistFromCenter = 200;   // 距离中心文字的最小距离
+      const minDistBetweenWords = 110;  // 文字之间的最小距离，防止重叠
 
       words.forEach((word, index) => {
         const div = document.createElement('div');
@@ -82,21 +86,21 @@
         let validPosition = false;
         let x, y, attempts = 0;
 
-        // 最多尝试100次，找到一个不重叠的位置
-        while (!validPosition && attempts < 100) {
-          // 用极坐标生成随机位置，保证均匀分布在整个屏幕
+        // 最多尝试150次，找到一个不重叠的位置
+        while (!validPosition && attempts < 150) {
+          // 用极坐标生成围绕中心的随机位置，确保分布均匀
           const angle = Math.random() * 2 * Math.PI;
-          const radius = minDistFromCenter + Math.random() * Math.min(window.innerWidth, window.innerHeight) / 2.5;
+          const radius = minDistFromCenter + Math.random() * Math.min(window.innerWidth, window.innerHeight) / 3;
           x = centerX + Math.cos(angle) * radius;
           y = centerY + Math.sin(angle) * radius;
 
-          // 检查是否超出屏幕边界
-          if (x < 50 || x > window.innerWidth - 50 || y < 50 || y > window.innerHeight - 50) {
+          // 边界检查：文字不能跑到屏幕外
+          if (x < 60 || x > window.innerWidth - 60 || y < 60 || y > window.innerHeight - 60) {
             attempts++;
             continue;
           }
 
-          // 检查是否和已有的文字重叠
+          // 碰撞检测：检查和已有的文字是否重叠
           let tooClose = false;
           for (const pos of positions) {
             const dist = Math.hypot(x - pos.x, y - pos.y);
@@ -113,28 +117,30 @@
           attempts++;
         }
 
-        // 设置位置
+        // 设置最终位置
         div.style.left = `${x}px`;
         div.style.top = `${y}px`;
 
-        // 随机设置漂浮动画的时长和延迟，让效果更自然
+        // 随机漂浮参数，让每个文字的动画节奏不一样
         const duration = 3 + Math.random() * 2;
         const delay = Math.random() * 2;
         div.style.animationDuration = `${duration}s`;
         div.style.animationDelay = `${delay}s`;
 
-        // 延迟显示文字
+        // 逐个显示文字
         setTimeout(() => {
           div.classList.add('show');
-        }, index * 120);
+        }, index * 100);
       });
     }
 
-    // 页面加载后，先显示中心文字，再加载周围文字
-    setTimeout(() => {
+    // 页面加载完成后执行
+    window.onload = () => {
+      // 先显示中心文字
       centerText.style.opacity = '1';
-      initWords();
-    }, 500);
+      // 延迟加载周围文字
+      setTimeout(initWords, 500);
+    };
   </script>
 </body>
 </html>
