@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>喜欢徐依晨的全部</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #fff;
+      font-family: "Microsoft Yahei", sans-serif;
+      overflow: hidden;
+    }
+    .text-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .center-text {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .word {
+      position: absolute;
+      font-size: 16px;
+      opacity: 0;
+      transition: opacity 0.5s, transform 0.5s;
+    }
+    .word.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="text-container">
+    <div class="center-text" id="centerText">我会喜欢徐依晨的全部</div>
+    <div id="wordsContainer"></div>
+  </div>
+
+  <script>
+    // 所有要展示的文字
+    const words = [
+      "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛", 
+      "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽", 
+      "徐依晨的声音", "徐依晨的开朗", "徐依晨的不堪", "徐依晨的优点", "徐依晨的腼腆", 
+      "徐依晨的窘迫", "徐依晨的脆弱", "徐依晨的生气", "徐依晨的底线", "徐依晨的古板", 
+      "徐依晨的家人", "徐依晨的人格", "徐依晨的家乡", "徐依晨的三观", "徐依晨的嗜好", 
+      "徐依晨的灵动", "徐依晨的善良", "徐依晨的经历", "徐依晨的生日", "徐依晨的浪漫", 
+      "徐依晨的不甘", "徐依晨的固执", "徐依晨的朋友", "徐依晨的尊严", "徐依晨的天真", 
+      "徐依晨的美好", "徐依晨的血型"
+    ];
+
+    const container = document.getElementById('wordsContainer');
+    const centerText = document.getElementById('centerText');
+
+    // 初始化文字，设置随机位置和显示动画
+    function initWords() {
+      words.forEach(word => {
+        const div = document.createElement('div');
+        div.className = 'word';
+        div.textContent = word;
+        container.appendChild(div);
+
+        // 随机位置（基于视窗大小）
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+        div.style.left = `${x}px`;
+        div.style.top = `${y}px`;
+
+        // 延迟显示，营造逐个出现的效果
+        setTimeout(() => {
+          div.classList.add('show');
+        }, Math.random() * 2000 + 1000);
+      });
+    }
+
+    // 先显示中心文字，再加载周围文字
+    setTimeout(() => {
+      centerText.style.opacity = '1';
+      initWords();
+    }, 1000);
+  </script>
+</body>
+</html>
