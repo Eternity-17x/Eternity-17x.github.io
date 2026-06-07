@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>喜欢徐依晨的全部 · 均匀分布</title>
+  <title>喜欢徐依晨的全部 · 随机分布</title>
   <style>
     body {
       margin: 0;
@@ -36,13 +36,14 @@
       border-radius: 60px;
       backdrop-filter: blur(2px);
       line-height: 1.3;
+      pointer-events: none;
     }
 
     /* 漂浮词汇 - 白色 */
     .word {
       position: absolute;
       opacity: 0;
-      transition: opacity 0.9s cubic-bezier(0.23, 1, 0.32, 1);
+      transition: opacity 0.8s ease;
       font-style: italic;
       white-space: nowrap;
       color: #ffffff;
@@ -112,6 +113,9 @@
 
       const container = document.getElementById('wordsContainer');
       
+      // 存储已放置的词汇矩形
+      let placedRects = [];
+      
       // 获取当前视口下的字号
       function getCurrentFontSize() {
         const width = window.innerWidth;
@@ -149,155 +153,100 @@
         const width = rect.width;
         const height = rect.height;
         document.body.removeChild(span);
-        return { width, height };
+        return { width: width + 10, height: height + 8 }; // 添加缓冲
       }
 
-      // 均匀分布算法：将屏幕分成网格，随机打乱后逐个放置
-      function uniformDistribution(wordSizes, centerRect) {
+      // 检查两个矩形是否重叠
+      function isOverlapping(rect1, rect2, buffer) {
+        return !(
+          rect1.right + buffer < rect2.left ||
+          rect1.left - buffer > rect2.right ||
+          rect1.bottom + buffer < rect2.top ||
+          rect1.top - buffer > rect2.bottom
+        );
+      }
+
+      // 检查位置是否有效（不与任何已放置元素重叠，且在边界内）
+      function isValidPosition(rect, isFirstWord) {
         const viewW = window.innerWidth;
         const viewH = window.innerHeight;
-        const margin = Math.max(25, viewW * 0.04);
+        const margin = Math.max(10, viewW * 0.02);
         
-        // 计算可用区域
-        const availableWidth = viewW - 2 * margin;
-        const availableHeight = viewH - 2 * margin;
+        // 边界检查
+        if (rect.left < margin || rect.right > viewW - margin ||
+            rect.top < margin || rect.bottom > viewH - margin) {
+          return false;
+        }
         
-        // 找出最大词汇尺寸，用于计算网格
-        let maxWordWidth = 0;
-        let maxWordHeight = 0;
-        wordSizes.forEach(size => {
-          maxWordWidth = Math.max(maxWordWidth, size.width);
-          maxWordHeight = Math.max(maxWordHeight, size.height);
-        });
+        // 与已放置元素检查碰撞
+        for (let i = 0; i < placedRects.length; i++) {
+          const placed = placedRects[i];
+          let buffer;
+          
+          if (placed.isCenter) {
+            // 与中心文字保持较大距离
+            buffer = Math.max(60, viewW * 0.08);
+          } else {
+            // 词汇之间保持适当间距
+            buffer = Math.max(25, viewW * 0.03);
+          }
+          
+          if (isOverlapping(rect, placed, buffer)) {
+            return false;
+          }
+        }
         
-        // 计算网格列数和行数（确保足够容纳所有词汇）
-        const cols = Math.floor(availableWidth / (maxWordWidth + 30));
-        const rows = Math.ceil(words.length / cols);
+        return true;
+      }
+
+      // 随机生成位置（确保不重叠）
+      function findRandomPosition(wordWidth, wordHeight) {
+        const viewW = window.innerWidth;
+        const viewH = window.innerHeight;
+        const margin = Math.max(15, viewW * 0.03);
+        const maxAttempts = 2000;
         
-        // 计算实际网格间距
-        const cellWidth = availableWidth / cols;
-        const cellHeight = Math.min(availableHeight / rows, maxWordHeight + 40);
+        // 随机尝试
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          const x = margin + Math.random() * (viewW - 2 * margin - wordWidth);
+          const y = margin + Math.random() * (viewH - 2 * margin - wordHeight);
+          
+          const rect = {
+            left: x,
+            top: y,
+            right: x + wordWidth,
+            bottom: y + wordHeight
+          };
+          
+          if (isValidPosition(rect, placedRects.length === 1)) {
+            return { x, y };
+          }
+        }
         
-        // 创建网格点列表
-        const gridPoints = [];
-        for (let row = 0; row < rows; row++) {
-          for (let col = 0; col < cols; col++) {
-            const centerX = margin + cellWidth * col + cellWidth / 2;
-            const centerY = margin + cellHeight * row + cellHeight / 2;
-            
-            // 检查是否与中心文字重叠
-            const wordRect = {
-              left: centerX - maxWordWidth / 2,
-              top: centerY - maxWordHeight / 2,
-              right: centerX + maxWordWidth / 2,
-              bottom: centerY + maxWordHeight / 2
+        // 如果随机找不到，使用更小的步长扫描
+        const stepX = Math.max(10, wordWidth * 0.5);
+        const stepY = Math.max(10, wordHeight * 0.5);
+        
+        for (let y = margin; y < viewH - margin - wordHeight; y += stepY) {
+          for (let x = margin; x < viewW - margin - wordWidth; x += stepX) {
+            const rect = {
+              left: x,
+              top: y,
+              right: x + wordWidth,
+              bottom: y + wordHeight
             };
             
-            const centerBuffer = Math.max(80, viewW * 0.1);
-            const overlapsCenter = !(
-              wordRect.right + centerBuffer < centerRect.left ||
-              wordRect.left - centerBuffer > centerRect.right ||
-              wordRect.bottom + centerBuffer < centerRect.top ||
-              wordRect.top - centerBuffer > centerRect.bottom
-            );
-            
-            if (!overlapsCenter) {
-              gridPoints.push({ centerX, centerY });
+            if (isValidPosition(rect, placedRects.length === 1)) {
+              return { x, y };
             }
           }
         }
         
-        // 随机打乱网格点
-        for (let i = gridPoints.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [gridPoints[i], gridPoints[j]] = [gridPoints[j], gridPoints[i]];
-        }
-        
-        // 分配词汇到网格点
-        const positions = [];
-        const shuffledWords = [...words].sort(() => Math.random() - 0.5);
-        
-        for (let i = 0; i < shuffledWords.length; i++) {
-          const word = shuffledWords[i];
-          const size = wordSizes.get(word);
-          
-          if (i < gridPoints.length) {
-            const point = gridPoints[i];
-            positions.push({
-              word: word,
-              x: point.centerX - size.width / 2,
-              y: point.centerY - size.height / 2,
-              width: size.width,
-              height: size.height
-            });
-          } else {
-            // 备用：随机放置
-            let placed = false;
-            for (let attempt = 0; attempt < 500; attempt++) {
-              const x = margin + Math.random() * (availableWidth - size.width);
-              const y = margin + Math.random() * (availableHeight - size.height);
-              
-              const rect = {
-                left: x,
-                top: y,
-                right: x + size.width,
-                bottom: y + size.height
-              };
-              
-              const centerBuffer = Math.max(80, viewW * 0.1);
-              const overlapsCenter = !(
-                rect.right + centerBuffer < centerRect.left ||
-                rect.left - centerBuffer > centerRect.right ||
-                rect.bottom + centerBuffer < centerRect.top ||
-                rect.top - centerBuffer > centerRect.bottom
-              );
-              
-              let overlapsOthers = false;
-              for (let pos of positions) {
-                const otherRect = {
-                  left: pos.x,
-                  top: pos.y,
-                  right: pos.x + pos.width,
-                  bottom: pos.y + pos.height
-                };
-                
-                const buffer = 20;
-                if (!(rect.right + buffer < otherRect.left ||
-                      rect.left - buffer > otherRect.right ||
-                      rect.bottom + buffer < otherRect.top ||
-                      rect.top - buffer > otherRect.bottom)) {
-                  overlapsOthers = true;
-                  break;
-                }
-              }
-              
-              if (!overlapsCenter && !overlapsOthers) {
-                positions.push({
-                  word: word,
-                  x: x,
-                  y: y,
-                  width: size.width,
-                  height: size.height
-                });
-                placed = true;
-                break;
-              }
-            }
-            
-            if (!placed) {
-              // 最终兜底
-              positions.push({
-                word: word,
-                x: margin,
-                y: margin + (positions.length * 30),
-                width: size.width,
-                height: size.height
-              });
-            }
-          }
-        }
-        
-        return positions;
+        // 最终兜底
+        return { 
+          x: margin + Math.random() * (viewW - 2 * margin - wordWidth),
+          y: margin + Math.random() * (viewH - 2 * margin - wordHeight)
+        };
       }
 
       // 渲染所有词汇
@@ -306,13 +255,14 @@
         while (container.firstChild) {
           container.removeChild(container.firstChild);
         }
+        placedRects = [];
         
         const viewW = window.innerWidth;
         const viewH = window.innerHeight;
         const centerFontSize = getCenterFontSize();
         const wordFontSize = getCurrentFontSize();
         
-        // 测量中心文字
+        // 测量并放置中心文字
         const centerTextStr = "我会喜欢徐依晨的全部";
         const centerSize = measureText(centerTextStr, centerFontSize);
         const centerX = viewW / 2;
@@ -322,23 +272,39 @@
           left: centerX - centerSize.width / 2,
           top: centerY - centerSize.height / 2,
           right: centerX + centerSize.width / 2,
-          bottom: centerY + centerSize.height / 2
+          bottom: centerY + centerSize.height / 2,
+          isCenter: true
         };
+        placedRects.push(centerRect);
         
-        // 测量所有词汇尺寸
+        // 随机打乱词汇顺序，使分布更自然
+        const shuffledWords = [...words].sort(() => Math.random() - 0.5);
+        
+        // 预测量所有词汇尺寸
         const wordSizes = new Map();
-        words.forEach(w => {
+        shuffledWords.forEach(w => {
           wordSizes.set(w, measureText(w, wordFontSize));
         });
         
-        // 使用均匀分布算法获取位置
-        const positions = uniformDistribution(wordSizes, centerRect);
-        
-        // 创建词汇元素
-        positions.forEach((pos, index) => {
+        // 逐个放置词汇
+        shuffledWords.forEach((word, index) => {
+          const size = wordSizes.get(word);
+          const pos = findRandomPosition(size.width, size.height);
+          
+          // 记录该词汇矩形
+          const wordRect = {
+            left: pos.x,
+            top: pos.y,
+            right: pos.x + size.width,
+            bottom: pos.y + size.height,
+            isCenter: false
+          };
+          placedRects.push(wordRect);
+          
+          // 创建词汇元素
           const wordDiv = document.createElement('div');
           wordDiv.className = 'word';
-          wordDiv.textContent = pos.word;
+          wordDiv.textContent = word;
           wordDiv.style.left = `${pos.x}px`;
           wordDiv.style.top = `${pos.y}px`;
           
@@ -350,10 +316,10 @@
           
           container.appendChild(wordDiv);
           
-          // 依次显现
+          // 依次显现，增加随机延迟
           setTimeout(() => {
             wordDiv.classList.add('show');
-          }, index * 60 + 100);
+          }, index * 70 + Math.random() * 200);
         });
       }
 
