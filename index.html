@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,10 +14,10 @@
       overflow: hidden;
       width: 2560px;
       height: 1600px;
+      position: relative;
     }
-
     /* 中心文字样式 */
-   .center-text {
+    .center-text {
       position: absolute;
       top: 50%;
       left: 50%;
@@ -26,45 +25,34 @@
       font-size: 48px;
       font-weight: normal;
       font-style: italic;
-      opacity: 0;
-      transition: opacity 0.8s ease;
+      opacity: 1;
       z-index: 10;
     }
-
     /* 周围文字样式 */
-   .word {
+    .word {
       position: absolute;
       font-size: 32px;
-      opacity: 0;
-      transition: opacity 0.8s ease;
       font-style: italic;
       white-space: nowrap;
-      animation: float 4s ease-in-out infinite alternate;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+      animation: float 5s ease-in-out infinite alternate;
     }
-
-   .word.show {
+    .word.show {
       opacity: 1;
     }
-
-    /* 缓慢漂浮动画 */
+    /* 漂浮动画（减小位移，避免动起来重叠） */
     @keyframes float {
-      0% {
-        transform: translate(0, 0);
-      }
-
-      100% {
-        transform: translate(10px, -10px);
-      }
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(5px, -5px); }
     }
   </style>
 </head>
-
 <body>
   <div class="center-text" id="centerText">我会喜欢徐依晨的全部</div>
   <div id="wordsContainer"></div>
 
   <script>
-    // 所有文字内容
     const words = [
       "徐依晨的名字", "徐依晨的性格", "徐依晨的样子", "徐依晨的鼻子", "徐依晨的眼睛",
       "徐依晨的耳朵", "徐依晨的嘴巴", "徐依晨的快乐", "徐依晨的难过", "徐依晨的美丽",
@@ -77,99 +65,85 @@
     ];
 
     const container = document.getElementById('wordsContainer');
-    const centerText = document.getElementById('centerText');
-    const positions = [];
+    const centerX = 2560 / 2;  // 固定屏幕宽度
+    const centerY = 1600 / 2;  // 固定屏幕高度
+    const minDistFromCenter = 300;  // 离中心更远，预留空间
+    const wordSpacing = 180;    // 文字之间的最小间距（大于文字尺寸）
 
-    function getTextDimensions(text, fontSize, fontFamily) {
-      const span = document.createElement('span');
-      span.style.position = 'absolute';
-      span.style.whiteSpace = 'nowrap';
-      span.style.fontSize = fontSize;
-      span.style.fontFamily = fontFamily;
-      span.textContent = text;
-      document.body.appendChild(span);
-      const width = span.offsetWidth;
-      const height = span.offsetHeight;
-      document.body.removeChild(span);
-      return { width, height };
+    // 获取文字的实际宽高
+    function getWordSize(text) {
+      const temp = document.createElement('span');
+      temp.style.cssText = `font-size:32px; font-family:KaiTi; white-space:nowrap; position:absolute;`;
+      temp.textContent = text;
+      document.body.appendChild(temp);
+      const size = { w: temp.offsetWidth, h: temp.offsetHeight };
+      document.body.removeChild(temp);
+      return size;
     }
 
-    function initWords() {
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      const minDistFromCenter = 200;
-      const minDistBetweenWords = 150;
+    // 生成不重叠的位置
+    function generateValidPosition(wordSize, usedPositions) {
+      let attempts = 0;
+      while (attempts < 500) {
+        // 用“环形分区”均匀分布，避免集中在某区域
+        const angle = (attempts % words.length) * (2 * Math.PI / words.length); // 均分角度
+        const radius = minDistFromCenter + Math.random() * 800; // 半径范围更大
+        let x = centerX + Math.cos(angle) * radius - wordSize.w/2;
+        let y = centerY + Math.sin(angle) * radius - wordSize.h/2;
 
+        // 整体左移（按需求）
+        x -= 80;
+
+        // 边界检查：文字完全在屏幕内
+        if (x < 20 || x + wordSize.w > 2560-20 || y < 20 || y + wordSize.h > 1600-20) {
+          attempts++;
+          continue;
+        }
+
+        // 碰撞检查：和已有的文字不重叠
+        let isOverlap = false;
+        for (const pos of usedPositions) {
+          const dx = Math.abs(x - pos.x);
+          const dy = Math.abs(y - pos.y);
+          if (dx < wordSpacing && dy < wordSpacing) { // 用固定间距替代尺寸计算，更稳妥
+            isOverlap = true;
+            break;
+          }
+        }
+
+        if (!isOverlap) {
+          return { x, y };
+        }
+        attempts++;
+      }
+      // 极端情况：返回一个默认位置
+      return { x: centerX + 500, y: centerY + 500 };
+    }
+
+    // 初始化所有文字
+    function initWords() {
+      const usedPositions = [];
       words.forEach((word, index) => {
+        const wordSize = getWordSize(word);
+        const pos = generateValidPosition(wordSize, usedPositions);
+        usedPositions.push(pos);
+
         const div = document.createElement('div');
         div.className = 'word';
         div.textContent = word;
+        div.style.left = `${pos.x}px`;
+        div.style.top = `${pos.y}px`;
+        // 随机动画节奏，避免同步移动
+        div.style.animationDuration = `${4 + Math.random() * 2}s`;
+        div.style.animationDelay = `${Math.random() * 3}s`;
         container.appendChild(div);
 
-        let validPosition = false;
-        let x, y, attempts = 0;
-        const { width, height } = getTextDimensions(word, '32px', 'KaiTi, STKaiti, SimSun, Microsoft YaHei, sans-serif');
-
-        while (!validPosition && attempts < 300) {
-          const angle = Math.random() * 2 * Math.PI;
-          const radius = minDistFromCenter + Math.random() * Math.min(window.innerWidth, window.innerHeight) / 3;
-          x = centerX + Math.cos(angle) * radius;
-          y = centerY + Math.sin(angle) * radius;
-
-          // 边界检查：文字不能跑到屏幕外
-          if (x - width / 2 < 60 || x + width / 2 > window.innerWidth - 60 || y - height / 2 < 60 || y + height / 2 > window.innerHeight - 60) {
-            attempts++;
-            continue;
-          }
-
-          // 碰撞检测：检查和已有的文字是否重叠
-          let tooClose = false;
-          for (const pos of positions) {
-            const otherWidth = pos.width;
-            const otherHeight = pos.height;
-            const distX = Math.abs(x - pos.x);
-            const distY = Math.abs(y - pos.y);
-            if (distX < (width + otherWidth) / 2 + minDistBetweenWords && distY < (height + otherHeight) / 2 + minDistBetweenWords) {
-              tooClose = true;
-              break;
-            }
-          }
-
-          if (!tooClose) {
-            validPosition = true;
-            positions.push({ x, y, width, height });
-          }
-          attempts++;
-        }
-
-        // 整体往左移动一些
-        x -= 100;
-
-        // 设置最终位置
-        div.style.left = `${x}px`;
-        div.style.top = `${y}px`;
-
-        // 随机漂浮参数，让每个文字的动画节奏不一样
-        const duration = 3 + Math.random() * 2;
-        const delay = Math.random() * 2;
-        div.style.animationDuration = `${duration}s`;
-        div.style.animationDelay = `${delay}s`;
-
-        // 逐个显示文字
-        setTimeout(() => {
-          div.classList.add('show');
-        }, index * 100);
+        // 逐个显示
+        setTimeout(() => div.classList.add('show'), index * 150);
       });
     }
 
-    // 页面加载完成后执行
-    window.onload = () => {
-      // 先显示中心文字
-      centerText.style.opacity = '1';
-      // 延迟加载周围文字
-      setTimeout(initWords, 500);
-    };
+    window.onload = initWords;
   </script>
 </body>
-
 </html>
