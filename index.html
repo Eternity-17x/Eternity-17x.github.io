@@ -23,18 +23,18 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 48px; /* 增大中心文字字体 */
+      font-size: 48px;
       font-weight: normal;
       font-style: italic;
       opacity: 0;
       transition: opacity 0.8s ease;
-      z-index: 10; /* 保证中心文字在最上层 */
+      z-index: 10;
     }
 
     /* 周围文字样式 */
    .word {
       position: absolute;
-      font-size: 32px; /* 增大周围文字字体 */
+      font-size: 32px;
       opacity: 0;
       transition: opacity 0.8s ease;
       font-style: italic;
@@ -53,7 +53,7 @@
       }
 
       100% {
-        transform: translate(10px, -10px); /* 调整漂浮动画的距离 */
+        transform: translate(10px, -10px);
       }
     }
   </style>
@@ -78,13 +78,27 @@
 
     const container = document.getElementById('wordsContainer');
     const centerText = document.getElementById('centerText');
-    const positions = []; // 记录已放置的文字位置，避免重叠
+    const positions = [];
+
+    function getTextDimensions(text, fontSize, fontFamily) {
+      const span = document.createElement('span');
+      span.style.position = 'absolute';
+      span.style.whiteSpace = 'nowrap';
+      span.style.fontSize = fontSize;
+      span.style.fontFamily = fontFamily;
+      span.textContent = text;
+      document.body.appendChild(span);
+      const width = span.offsetWidth;
+      const height = span.offsetHeight;
+      document.body.removeChild(span);
+      return { width, height };
+    }
 
     function initWords() {
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
       const minDistFromCenter = 200;
-      const minDistBetweenWords = 150; // 增大文字之间的最小距离
+      const minDistBetweenWords = 150;
 
       words.forEach((word, index) => {
         const div = document.createElement('div');
@@ -94,15 +108,16 @@
 
         let validPosition = false;
         let x, y, attempts = 0;
+        const { width, height } = getTextDimensions(word, '32px', 'KaiTi, STKaiti, SimSun, Microsoft YaHei, sans-serif');
 
-        while (!validPosition && attempts < 150) {
+        while (!validPosition && attempts < 300) {
           const angle = Math.random() * 2 * Math.PI;
           const radius = minDistFromCenter + Math.random() * Math.min(window.innerWidth, window.innerHeight) / 3;
           x = centerX + Math.cos(angle) * radius;
           y = centerY + Math.sin(angle) * radius;
 
           // 边界检查：文字不能跑到屏幕外
-          if (x < 60 || x > window.innerWidth - 60 || y < 60 || y > window.innerHeight - 60) {
+          if (x - width / 2 < 60 || x + width / 2 > window.innerWidth - 60 || y - height / 2 < 60 || y + height / 2 > window.innerHeight - 60) {
             attempts++;
             continue;
           }
@@ -110,8 +125,11 @@
           // 碰撞检测：检查和已有的文字是否重叠
           let tooClose = false;
           for (const pos of positions) {
-            const dist = Math.hypot(x - pos.x, y - pos.y);
-            if (dist < minDistBetweenWords) {
+            const otherWidth = pos.width;
+            const otherHeight = pos.height;
+            const distX = Math.abs(x - pos.x);
+            const distY = Math.abs(y - pos.y);
+            if (distX < (width + otherWidth) / 2 + minDistBetweenWords && distY < (height + otherHeight) / 2 + minDistBetweenWords) {
               tooClose = true;
               break;
             }
@@ -119,7 +137,7 @@
 
           if (!tooClose) {
             validPosition = true;
-            positions.push({ x, y });
+            positions.push({ x, y, width, height });
           }
           attempts++;
         }
