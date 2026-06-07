@@ -13,31 +13,35 @@
       font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", sans-serif;
       overflow: hidden;
     }
-    /* 中心文字样式 */
+    /* 中心文字样式 - 放大 */
     .center-text {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 32px;
+      font-size: 42px;
       font-weight: normal;
       font-style: italic;
       opacity: 0;
       transition: opacity 0.8s ease;
-      z-index: 10; /* 保证中心文字在最上层 */
+      z-index: 10;
+      text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+      letter-spacing: 3px;
     }
-    /* 周围文字样式 */
+    /* 周围文字样式 - 放大 */
     .word {
       position: absolute;
-      font-size: 20px;
+      font-size: 30px;
       opacity: 0;
       transition: opacity 0.8s ease;
       font-style: italic;
       white-space: nowrap;
-      animation: float 4s ease-in-out infinite alternate;
+      text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+      letter-spacing: 2px;
     }
     .word.show {
       opacity: 1;
+      animation: float 5s ease-in-out infinite alternate;
     }
     /* 缓慢漂浮动画 */
     @keyframes float {
@@ -45,8 +49,18 @@
         transform: translate(0, 0);
       }
       100% {
-        transform: translate(6px, -6px);
+        transform: translate(8px, -8px);
       }
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .center-text { font-size: 32px; }
+      .word { font-size: 22px; }
+    }
+    @media (max-width: 480px) {
+      .center-text { font-size: 28px; }
+      .word { font-size: 18px; }
     }
   </style>
 </head>
@@ -69,13 +83,76 @@
 
     const container = document.getElementById('wordsContainer');
     const centerText = document.getElementById('centerText');
-    const positions = []; // 记录已放置的文字位置，避免重叠
+
+    // 测量文字实际尺寸
+    function measureText(text, fontSize) {
+      const measureEl = document.createElement('span');
+      measureEl.textContent = text;
+      measureEl.style.cssText = `
+        position: absolute;
+        visibility: hidden;
+        font-style: italic;
+        font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", sans-serif;
+        font-size: ${fontSize}px;
+        letter-spacing: 2px;
+        white-space: nowrap;
+      `;
+      document.body.appendChild(measureEl);
+      const rect = measureEl.getBoundingClientRect();
+      document.body.removeChild(measureEl);
+      return { width: rect.width, height: rect.height };
+    }
+
+    function getFontSize() {
+      const w = window.innerWidth;
+      if (w <= 480) return 18;
+      if (w <= 768) return 22;
+      return 30;
+    }
+
+    function getCenterFontSize() {
+      const w = window.innerWidth;
+      if (w <= 480) return 28;
+      if (w <= 768) return 32;
+      return 42;
+    }
 
     function initWords() {
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      const minDistFromCenter = 200;   // 距离中心文字的最小距离
-      const minDistBetweenWords = 110;  // 文字之间的最小距离，防止重叠
+      // 清空容器
+      container.innerHTML = '';
+      const positions = [];
+      
+      const viewW = window.innerWidth;
+      const viewH = window.innerHeight;
+      
+      // 中心点向左偏移
+      const centerX = viewW / 2 - 80; // 整体向左移动80px
+      const centerY = viewH / 2;
+      
+      const fontSize = getFontSize();
+      const centerFontSize = getCenterFontSize();
+      
+      // 测量中心文字尺寸
+      const centerSize = measureText("我会喜欢徐依晨的全部", centerFontSize);
+      
+      // 记录中心文字位置
+      positions.push({
+        x: centerX,
+        y: centerY,
+        width: centerSize.width,
+        height: centerSize.height,
+        isCenter: true
+      });
+
+      // 计算安全距离
+      const minDistFromCenter = Math.max(centerSize.width, centerSize.height) * 1.5 + 40;
+      const minDistBetweenWords = Math.max(80, viewW * 0.08);
+
+      // 预测量所有文字尺寸
+      const wordSizes = {};
+      words.forEach(word => {
+        wordSizes[word] = measureText(word, fontSize);
+      });
 
       words.forEach((word, index) => {
         const div = document.createElement('div');
@@ -83,28 +160,42 @@
         div.textContent = word;
         container.appendChild(div);
 
+        const wordSize = wordSizes[word];
         let validPosition = false;
         let x, y, attempts = 0;
+        const maxAttempts = 300;
 
-        // 最多尝试150次，找到一个不重叠的位置
-        while (!validPosition && attempts < 150) {
-          // 用极坐标生成围绕中心的随机位置，确保分布均匀
+        // 寻找不重叠的位置
+        while (!validPosition && attempts < maxAttempts) {
+          // 使用极坐标生成位置，偏向左侧
           const angle = Math.random() * 2 * Math.PI;
-          const radius = minDistFromCenter + Math.random() * Math.min(window.innerWidth, window.innerHeight) / 3;
+          const radius = minDistFromCenter + Math.random() * (Math.min(viewW, viewH) * 0.45);
+          
           x = centerX + Math.cos(angle) * radius;
           y = centerY + Math.sin(angle) * radius;
 
-          // 边界检查：文字不能跑到屏幕外
-          if (x < 60 || x > window.innerWidth - 60 || y < 60 || y > window.innerHeight - 60) {
+          // 边界检查（考虑文字尺寸）
+          const margin = 30;
+          if (x - wordSize.width / 2 < margin || 
+              x + wordSize.width / 2 > viewW - margin || 
+              y - wordSize.height / 2 < margin || 
+              y + wordSize.height / 2 > viewH - margin) {
             attempts++;
             continue;
           }
 
-          // 碰撞检测：检查和已有的文字是否重叠
+          // 碰撞检测
           let tooClose = false;
           for (const pos of positions) {
-            const dist = Math.hypot(x - pos.x, y - pos.y);
-            if (dist < minDistBetweenWords) {
+            const dx = x - pos.x;
+            const dy = y - pos.y;
+            const dist = Math.hypot(dx, dy);
+            
+            const minDist = pos.isCenter ? 
+              minDistFromCenter + wordSize.width * 0.5 : 
+              minDistBetweenWords;
+            
+            if (dist < minDist) {
               tooClose = true;
               break;
             }
@@ -112,17 +203,68 @@
 
           if (!tooClose) {
             validPosition = true;
-            positions.push({ x, y });
+            positions.push({
+              x: x,
+              y: y,
+              width: wordSize.width,
+              height: wordSize.height,
+              isCenter: false
+            });
           }
           attempts++;
         }
 
-        // 设置最终位置
-        div.style.left = `${x}px`;
-        div.style.top = `${y}px`;
+        // 如果找不到合适位置，使用网格扫描
+        if (!validPosition) {
+          const margin = 30;
+          const stepX = wordSize.width + 20;
+          const stepY = wordSize.height + 20;
+          
+          outerLoop:
+          for (let sy = margin; sy < viewH - margin - wordSize.height; sy += stepY * 0.5) {
+            for (let sx = margin; sx < viewW - margin - wordSize.width; sx += stepX * 0.5) {
+              const cx = sx + wordSize.width / 2;
+              const cy = sy + wordSize.height / 2;
+              
+              let tooClose = false;
+              for (const pos of positions) {
+                const dx = cx - pos.x;
+                const dy = cy - pos.y;
+                const dist = Math.hypot(dx, dy);
+                
+                const minDist = pos.isCenter ? 
+                  minDistFromCenter + wordSize.width * 0.5 : 
+                  minDistBetweenWords;
+                
+                if (dist < minDist) {
+                  tooClose = true;
+                  break;
+                }
+              }
+              
+              if (!tooClose) {
+                x = sx;
+                y = sy;
+                validPosition = true;
+                positions.push({
+                  x: cx,
+                  y: cy,
+                  width: wordSize.width,
+                  height: wordSize.height,
+                  isCenter: false
+                });
+                break outerLoop;
+              }
+            }
+          }
+        }
 
-        // 随机漂浮参数，让每个文字的动画节奏不一样
-        const duration = 3 + Math.random() * 2;
+        // 设置位置
+        div.style.left = `${x - wordSize.width / 2}px`;
+        div.style.top = `${y - wordSize.height / 2}px`;
+
+        // 随机漂浮参数
+        const duration = 4 + Math.random() * 3;
         const delay = Math.random() * 2;
         div.style.animationDuration = `${duration}s`;
         div.style.animationDelay = `${delay}s`;
@@ -130,17 +272,27 @@
         // 逐个显示文字
         setTimeout(() => {
           div.classList.add('show');
-        }, index * 100);
+        }, index * 80);
       });
     }
 
     // 页面加载完成后执行
     window.onload = () => {
-      // 先显示中心文字
       centerText.style.opacity = '1';
-      // 延迟加载周围文字
       setTimeout(initWords, 500);
     };
+
+    // 窗口缩放时重新布局
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      const allWords = container.querySelectorAll('.word');
+      allWords.forEach(el => el.classList.remove('show'));
+      
+      resizeTimer = setTimeout(() => {
+        initWords();
+      }, 500);
+    });
   </script>
 </body>
 </html>
