@@ -13,13 +13,13 @@
       font-family: "KaiTi", "STKaiti", "SimSun", "Microsoft YaHei", sans-serif;
       overflow: hidden;
     }
-    /* 中心文字样式 */
+    /* 中心文字样式 原48px → 51px */
     .center-text {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 48px;
+      font-size: 51px;
       font-weight: normal;
       font-style: italic;
       opacity: 0;
@@ -28,10 +28,10 @@
       text-shadow: 0 0 30px rgba(255, 235, 190, 0.5), 0 0 60px rgba(255, 200, 140, 0.3);
       letter-spacing: 3px;
     }
-    /* 周围文字样式 */
+    /* 周围文字样式 原36px → 39px */
     .word {
       position: absolute;
-      font-size: 36px;
+      font-size: 39px;
       opacity: 0;
       transition: opacity 0.8s ease;
       font-style: italic;
@@ -53,19 +53,20 @@
       }
     }
 
-    /* 响应式：平板 */
+    /* 响应式：平板 原40/28 → 43/31 */
     @media (max-width: 1024px) {
-      .center-text { font-size: 40px; }
-      .word { font-size: 28px; }
+      .center-text { font-size: 43px; }
+      .word { font-size: 31px; }
     }
-    /* 响应式：手机 */
+    /* 响应式：手机 原32/22 → 35/25 */
     @media (max-width: 768px) {
-      .center-text { font-size: 32px; }
-      .word { font-size: 22px; }
+      .center-text { font-size: 35px; }
+      .word { font-size: 25px; }
     }
+    /* 小屏手机 原26/18 → 29/21 */
     @media (max-width: 480px) {
-      .center-text { font-size: 26px; }
-      .word { font-size: 18px; }
+      .center-text { font-size: 29px; }
+      .word { font-size: 21px; }
     }
   </style>
 </head>
@@ -157,11 +158,12 @@
 
     function getFontSize() {
       const w = window.innerWidth;
-      if (w < 480) return 18;
-      if (w < 768) return 22;
-      if (w < 1024) return 28;
-      if (w < 2000) return 36;
-      return 46;
+      // 所有字号 +3
+      if (w < 480) return 21;
+      if (w < 768) return 25;
+      if (w < 1024) return 31;
+      if (w < 2000) return 39;
+      return 49;
     }
 
     // 矩形碰撞检测
@@ -195,16 +197,10 @@
       const fontSize = getFontSize();
       const { minDistFromCenter, minDistBetweenWords, margin, maxAttempts, leftBias } = params;
 
-      // 预测量所有文字
-      const wordSizes = {};
-      words.forEach(word => {
-        wordSizes[word] = measureWord(word, fontSize);
-      });
-
-      // 中心文字区域
-      const centerFont = window.innerWidth < 480 ? 26 : 
-        window.innerWidth < 768 ? 32 : 
-        window.innerWidth < 1024 ? 40 : 48;
+      // 中心文字区域 字号+3
+      const centerFont = window.innerWidth < 480 ? 29 : 
+        window.innerWidth < 768 ? 35 : 
+        window.innerWidth < 1024 ? 43 : 51;
       const centerSize = measureWord("我会喜欢徐依晨的全部", centerFont);
       
       positions.push({
@@ -213,6 +209,12 @@
         width: centerSize.width,
         height: centerSize.height,
         isCenter: true,
+      });
+
+      // 预测量所有文字
+      const wordSizes = {};
+      words.forEach(word => {
+        wordSizes[word] = measureWord(word, fontSize);
       });
 
       // 逐个放置文字
@@ -283,7 +285,7 @@
                 const buffer = pos.isCenter ? minDistFromCenter : minDistBetweenWords;
                 if (rectsOverlap(newRect, posRect, buffer)) {
                   tooClose = true;
-                  break;
+                  break outer;
                 }
               }
               
