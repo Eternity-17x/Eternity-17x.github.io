@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>喜欢徐依晨的全部 · 优化防重叠</title>
+  <title>喜欢徐依晨的全部 · 力导向布局</title>
   <style>
     body {
       margin: 0;
@@ -104,7 +104,6 @@
       ];
 
       const container = document.getElementById('wordsContainer');
-      let placedRects = [];
       
       function getCurrentFontSize() {
         const width = window.innerWidth;
@@ -137,165 +136,134 @@
         document.body.appendChild(span);
         const rect = span.getBoundingClientRect();
         document.body.removeChild(span);
-        // 返回精确尺寸，不添加额外缓冲（在碰撞检测时统一处理）
         return { width: rect.width, height: rect.height };
       }
 
-      function isOverlapping(rect1, rect2, buffer) {
-        return !(
-          rect1.right + buffer <= rect2.left ||
-          rect1.left - buffer >= rect2.right ||
-          rect1.bottom + buffer <= rect2.top ||
-          rect1.top - buffer >= rect2.bottom
-        );
-      }
+      // 力导向布局算法
+      function forceDirectedLayout(wordData, centerRect, viewW, viewH) {
+        const nodes = wordData.map(data => ({
+          ...data,
+          x: Math.random() * viewW,
+          y: Math.random() * viewH,
+          vx: 0,
+          vy: 0
+        }));
 
-      function isValidPosition(rect) {
-        const viewW = window.innerWidth;
-        const viewH = window.innerHeight;
-        const margin = Math.max(15, viewW * 0.025);
-        
-        // 边界检查（使用<=和>=更严格）
-        if (rect.left <= margin || rect.right >= viewW - margin ||
-            rect.top <= margin || rect.bottom >= viewH - margin) {
-          return false;
-        }
-        
-        // 与已放置元素检查碰撞
-        for (let i = 0; i < placedRects.length; i++) {
-          const placed = placedRects[i];
-          let buffer;
-          
-          if (placed.isCenter) {
-            // 中心文字需要更大的缓冲区
-            buffer = Math.max(80, viewW * 0.1);
-          } else {
-            // 词汇之间的间距
-            buffer = Math.max(30, viewW * 0.025);
-          }
-          
-          if (isOverlapping(rect, placed, buffer)) {
-            return false;
-          }
-        }
-        
-        return true;
-      }
+        const margin = 30;
+        const iterations = 500; // 迭代次数
+        const repulsionStrength = 5000; // 排斥力强度
+        const damping = 0.9; // 阻尼系数
+        const minDistance = 80; // 最小距离
 
-      function findRandomPosition(wordWidth, wordHeight) {
-        const viewW = window.innerWidth;
-        const viewH = window.innerHeight;
-        const margin = Math.max(20, viewW * 0.03);
-        const maxAttempts = 3000; // 增加尝试次数
-        
-        // 第一阶段：纯随机采样
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          const x = margin + Math.random() * (viewW - 2 * margin - wordWidth);
-          const y = margin + Math.random() * (viewH - 2 * margin - wordHeight);
-          
-          const rect = {
-            left: x,
-            top: y,
-            right: x + wordWidth,
-            bottom: y + wordHeight
-          };
-          
-          if (isValidPosition(rect)) {
-            return { x, y };
-          }
-        }
-        
-        // 第二阶段：精细网格扫描
-        const stepX = Math.max(8, wordWidth * 0.4);
-        const stepY = Math.max(8, wordHeight * 0.4);
-        
-        // 从多个方向扫描
-        const scanDirections = [
-          { startY: margin, endY: viewH - margin, stepY: stepY },
-          { startY: viewH - margin, endY: margin, stepY: -stepY }
-        ];
-        
-        for (const dir of scanDirections) {
-          for (let y = dir.startY; 
-               dir.stepY > 0 ? y < dir.endY - wordHeight : y > dir.endY; 
-               y += dir.stepY) {
-            for (let x = margin; x < viewW - margin - wordWidth; x += stepX) {
-              const rect = {
-                left: x,
-                top: y,
-                right: x + wordWidth,
-                bottom: y + wordHeight
-              };
+        for (let iter = 0; iter < iterations; iter++) {
+          // 重置力
+          nodes.forEach(node => {
+            node.vx = 0;
+            node.vy = 0;
+          });
+
+          // 计算排斥力（节点之间）
+          for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+              const dx = nodes[j].x - nodes[i].x;
+              const dy = nodes[j].y - nodes[i].y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
               
-              if (isValidPosition(rect)) {
-                return { x, y };
+              if (distance < minDistance && distance > 0) {
+                const force = repulsionStrength / (distance * distance);
+                const fx = (dx / distance) * force;
+                const fy = (dy / distance) * force;
+                
+                nodes[i].vx -= fx;
+                nodes[i].vy -= fy;
+                nodes[j].vx += fx;
+                nodes[j].vy += fy;
               }
             }
           }
+
+          // 计算与中心的排斥力
+          nodes.forEach(node => {
+            const dx = node.x - centerRect.x;
+            const dy = node.y - centerRect.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < centerRect.radius + 50 && distance > 0) {
+              const force = repulsionStrength * 2 / (distance * distance);
+              node.vx += (dx / distance) * force;
+              node.vy += (dy / distance) * force;
+            }
+          });
+
+          // 边界约束力
+          nodes.forEach(node => {
+            if (node.x < margin) node.vx += 10;
+            if (node.x > viewW - margin) node.vx -= 10;
+            if (node.y < margin) node.vy += 10;
+            if (node.y > viewH - margin) node.vy -= 10;
+          });
+
+          // 更新位置
+          nodes.forEach(node => {
+            node.vx *= damping;
+            node.vy *= damping;
+            node.x += node.vx;
+            node.y += node.vy;
+            
+            // 边界限制
+            node.x = Math.max(margin, Math.min(viewW - margin, node.x));
+            node.y = Math.max(margin, Math.min(viewH - margin, node.y));
+          });
         }
-        
-        // 第三阶段：终极兜底
-        console.warn('无法找到理想位置，使用兜底方案');
-        return { 
-          x: margin + Math.random() * (viewW - 2 * margin - wordWidth),
-          y: margin + Math.random() * (viewH - 2 * margin - wordHeight)
-        };
+
+        return nodes.map(node => ({
+          word: node.word,
+          x: node.x - node.width / 2,
+          y: node.y - node.height / 2,
+          width: node.width,
+          height: node.height
+        }));
       }
 
       function renderWords() {
         while (container.firstChild) {
           container.removeChild(container.firstChild);
         }
-        placedRects = [];
         
         const viewW = window.innerWidth;
         const viewH = window.innerHeight;
         const centerFontSize = getCenterFontSize();
         const wordFontSize = getCurrentFontSize();
         
-        // 放置中心文字
+        // 中心文字
         const centerTextStr = "我会喜欢徐依晨的全部";
         const centerSize = measureText(centerTextStr, centerFontSize);
-        const centerX = viewW / 2;
-        const centerY = viewH / 2;
-        
         const centerRect = {
-          left: centerX - centerSize.width / 2,
-          top: centerY - centerSize.height / 2,
-          right: centerX + centerSize.width / 2,
-          bottom: centerY + centerSize.height / 2,
-          isCenter: true
+          x: viewW / 2,
+          y: viewH / 2,
+          width: centerSize.width,
+          height: centerSize.height,
+          radius: Math.max(centerSize.width, centerSize.height) * 0.8
         };
-        placedRects.push(centerRect);
         
-        // 随机打乱词汇
-        const shuffledWords = [...words].sort(() => Math.random() - 0.5);
-        
-        // 预测量所有词汇
-        const wordSizes = new Map();
-        shuffledWords.forEach(w => {
-          wordSizes.set(w, measureText(w, wordFontSize));
+        // 测量所有词汇
+        const wordData = words.map(word => {
+          const size = measureText(word, wordFontSize);
+          return {
+            word: word,
+            width: size.width,
+            height: size.height
+          };
         });
         
-        // 逐个放置
-        shuffledWords.forEach((word, index) => {
-          const size = wordSizes.get(word);
-          const pos = findRandomPosition(size.width, size.height);
-          
-          // 记录位置
-          const wordRect = {
-            left: pos.x,
-            top: pos.y,
-            right: pos.x + size.width,
-            bottom: pos.y + size.height,
-            isCenter: false
-          };
-          placedRects.push(wordRect);
-          
-          // 创建DOM元素
+        // 使用力导向布局
+        const positions = forceDirectedLayout(wordData, centerRect, viewW, viewH);
+        
+        // 创建词汇元素
+        positions.forEach((pos, index) => {
           const wordDiv = document.createElement('div');
           wordDiv.className = 'word';
-          wordDiv.textContent = word;
+          wordDiv.textContent = pos.word;
           wordDiv.style.left = `${pos.x}px`;
           wordDiv.style.top = `${pos.y}px`;
           
@@ -308,11 +276,8 @@
           
           setTimeout(() => {
             wordDiv.classList.add('show');
-          }, index * 80 + Math.random() * 150);
+          }, index * 50 + 100);
         });
-        
-        // 验证结果
-        console.log(`已放置 ${placedRects.length} 个元素（含中心文字）`);
       }
 
       let resizeTimer;
